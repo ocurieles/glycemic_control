@@ -58,7 +58,7 @@ En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F1 cerrada (backend base). Siguiente: F2 (app Android base y vinculación).
+- Fase actual: F1 cerrada y **desplegada en el proyecto real `checkin-familia`** (us-east1). Siguiente: F2 (app Android base y vinculación).
 - Hecho:
   - Repo Android inicializado (git init + commit de la especificación).
   - `firebase/` completo: `firebase.json` (emuladores auth/firestore/functions, `us-east1`), `firestore.rules` (docs/03 §4 con `validSettings()`), `firestore.indexes.json`, `.firebaserc` (placeholder de projectId).
