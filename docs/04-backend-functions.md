@@ -54,8 +54,8 @@ La **hora real** del evento es `realAt = min(clientAt, createdAt)` (el cliente y
 |---|---|
 | `checkin` | 1) `realAt` y `syncedLate = createdAt − realAt > 120 s`. 2) Glucosa: si **no** es `syncedLate`, usa la última lectura; si es `syncedLate`, busca en el **historial** (graph) el punto más cercano a `realAt` (±10 min); si no hay, deja `glucoseError: "stale"`. Timeout total de LibreLinkUp: 8 s. 3) Actualiza el evento y `families.lastCheckinAt = max(actual, realAt)`. 4) `recomputeDay(fid, fecha(realAt))`. 5) Push a los padres `checkin` (o `checkin_late` si `syncedLate`). |
 | `sos` | 0) `realAt` y `syncedLate` (igual que en checkin). 1) Push inmediato a los padres `sos` con la hora `realAt`, **antes** de LibreLinkUp. 2) Intenta obtener la glucosa (5 s); si la obtiene, actualiza el evento y envía un push `sos_glucose`. |
-| `parent_message` | Push al niño `parent_message` con `{ text, from }`. |
-| `sos_ack` | Push al niño `sos_ack` con `{ from, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
+| `parent_message` | Push al niño `parent_message` con `{ text, senderName }`. |
+| `sos_ack` | Push al niño `sos_ack` con `{ senderName, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
 
 Si un SOS llega con `syncedLate` (se creó sin red), el push lo indica: "SOS enviado a las 10:12 (llegó 10:30, sin conexión)". Si `smsSent`, lo menciona.
 
@@ -80,7 +80,8 @@ Para cada familia con `settings.enabled == true` y `childUid`:
 
 ## Mensajería (`messaging.ts`)
 - `sendToParents(fid, payload, excludeUid?)`: usa las claves de `families.parents` para leer `users/{uid}.fcmToken`. `sendToChild(fid, payload)`: usa **solo** `families.childUid`. Ambos envían con `sendEachForMulticast`.
-- Si FCM responde `registration-token-not-registered` o `invalid-argument`, se borra `fcmToken` de ese usuario.
+- Si FCM responde `registration-token-not-registered`, se borra `fcmToken` de ese usuario (es la única señal de "este token ya no existe, para siempre", según la propia documentación de FCM). `invalid-argument` **no** borra el token: puede salir de un token recién creado que todavía no terminó de propagarse, o de un payload inválido — borrar el token ahí dejaría al usuario sin push hasta que la app se reabra sin arreglar la causa real.
+- **Ninguna clave del payload de datos puede ser una palabra reservada de FCM** (`from`, `to`, `message_type`, `collapse_key`, ni nada que empiece con `google.`/`gcm.`) — FCM rechaza el mensaje entero con `invalid-argument` si aparece alguna. Por eso el nombre del remitente se manda como `senderName`, no `from` (bug real encontrado en pruebas de campo, F8).
 - Todos los mensajes son **data-only** con `android: { priority: "high", ttl: <según tipo> }`.
 
 ### Payloads (todas las claves y valores son strings)
@@ -93,8 +94,8 @@ Para cada familia con `settings.enabled == true` y `childUid`:
 | `sos_glucose` | padres | `title, body, eventId` | 1 h | `parent_sos` |
 | `sos_ack_info` | padres (otros) | `title, body` | 1 h | `parent_alert` |
 | `day_summary` | padres | `title, body, date` | 12 h | `parent_checkin` |
-| `parent_message` | niño | `text, from, eventId, at` (epoch ms de `realAt`) | 30 min | `child_message` |
-| `sos_ack` | niño | `text, from, at` | 1 h | `child_message` |
+| `parent_message` | niño | `text, senderName, eventId, at` (epoch ms de `realAt`) | 30 min | `child_message` |
+| `sos_ack` | niño | `text, senderName, at` | 1 h | `child_message` |
 | `nudge` | niño | `slot` | 5 min | `child_reminder` |
 | `sync` | niño | — | 1 h | (sin notificación) |
 

@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkRequest
 import androidx.core.content.getSystemService
 import com.ingeint.checkin.notify.Channels
+import com.ingeint.checkin.push.syncFcmToken
 import com.ingeint.checkin.reminders.ReminderScheduler
 import com.ingeint.checkin.sync.SyncWorker
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +48,10 @@ class CheckinApp : Application() {
             if (role != null) {
                 SyncWorker.enqueue(this@CheckinApp)
                 SyncWorker.enqueuePeriodic(this@CheckinApp) // respaldo cada 15 min (docs/07)
+                // Reintenta guardar el token FCM en cada arranque: cubre los teléfonos ya
+                // vinculados antes de este fix (ver push/FcmTokenSync.kt) y cualquier caso
+                // donde el token haya cambiado sin que onNewToken se haya podido guardar.
+                syncFcmToken(container)
             }
         }
 

@@ -77,7 +77,7 @@ class PushService : FirebaseMessagingService() {
                 }
                 "parent_message" -> {
                     val at = data["at"]?.toLongOrNull() ?: System.currentTimeMillis()
-                    app.container.prefs.saveLastMessage(data["text"].orEmpty(), data["from"].orEmpty(), at)
+                    app.container.prefs.saveLastMessage(data["text"].orEmpty(), data["senderName"].orEmpty(), at)
                     Haptics.vibrate(this@PushService, VibrationPattern.MESSAGE)
                     ChildNotifier.showMessage(this@PushService, data["text"].orEmpty())
                 }

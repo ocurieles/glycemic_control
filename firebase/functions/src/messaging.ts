@@ -8,10 +8,15 @@ import { logger } from "firebase-functions";
  */
 export type PushPayload = Record<string, string>;
 
-const INVALID_TOKEN_ERRORS = new Set([
-  "messaging/registration-token-not-registered",
-  "messaging/invalid-argument",
-]);
+/**
+ * BUG real encontrado en pruebas de campo (docs/08 F8): solo `registration-token-not-
+ * registered` significa "este token ya no existe, bórralo para siempre" según la doc
+ * de FCM. `invalid-argument` puede salir de un token recién creado que Google todavía
+ * no terminó de propagar (segundos después de instalar/vincular) — es transitorio, y
+ * borrarlo de una vez dejaba al usuario sin push hasta reabrir la app (que es lo único
+ * que lo vuelve a guardar). Se deja de tratar como "borrar para siempre".
+ */
+const INVALID_TOKEN_ERRORS = new Set(["messaging/registration-token-not-registered"]);
 
 /** TTL por tipo de push (docs/04, columna "TTL"). */
 export const PUSH_TTL_SECONDS = {
@@ -45,7 +50,7 @@ async function sendToTokens(uidToToken: Map<string, string>, type: PushType, pay
   response.responses.forEach((r, i) => {
     if (r.success) return;
     const code = r.error?.code;
-    logger.info("push failed", { uid: uids[i], type, code });
+    logger.info("push failed", { uid: uids[i], type, code, errorMessage: r.error?.message });
     if (code && INVALID_TOKEN_ERRORS.has(code)) staleUids.push(uids[i]);
   });
 

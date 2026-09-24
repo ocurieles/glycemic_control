@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ingeint.checkin.AppContainer
 import com.ingeint.checkin.data.remote.FunctionsCallError
 import com.ingeint.checkin.notify.Channels
+import com.ingeint.checkin.push.syncFcmToken
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,6 +83,7 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
             container.prefs.saveLink(role = "parent", familyId = result.familyId, childName = childName.trim(), displayName = parentName.trim())
             Channels.createForRole(containerContext(), "parent")
             com.ingeint.checkin.sync.SyncWorker.enqueuePeriodic(containerContext())
+            syncFcmToken(container) // users/{uid} ya existe (lo creó createFamily): recién ahora es seguro guardar el token.
             _state.update {
                 it.copy(
                     loading = false,
@@ -111,6 +113,7 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
             )
             Channels.createForRole(containerContext(), role)
             com.ingeint.checkin.sync.SyncWorker.enqueuePeriodic(containerContext())
+            syncFcmToken(container) // users/{uid} ya existe (lo creó joinFamily): recién ahora es seguro guardar el token.
             if (role == "child") fetchAndScheduleSettings(result.familyId)
             _state.update { it.copy(loading = false, step = SetupStep.Linked(role, result.childName)) }
         }

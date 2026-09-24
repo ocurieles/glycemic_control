@@ -93,7 +93,7 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       await snap.ref.update(baseUpdate);
       await sendToChild(familyId, "parent_message", {
         text: (data.text as string) ?? "",
-        from: senderName ?? "",
+        senderName: senderName ?? "",
         eventId,
         at: String(realAtMs),
       });
@@ -103,7 +103,7 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       await snap.ref.update(baseUpdate);
       await sendToChild(familyId, "sos_ack", {
         text: (data.text as string) ?? "",
-        from: senderName ?? "",
+        senderName: senderName ?? "",
         at: String(realAtMs),
       });
       await sendToParents(
