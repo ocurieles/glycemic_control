@@ -5,7 +5,7 @@
 - En cada fase: pegar el prompt → pedir **plan mode** (Shift+Tab) → revisar el plan → aprobarlo → implementar → correr las pruebas → hacer commit.
 - Al cerrar cada fase, pedir: *"Actualiza la sección Estado de CLAUDE.md con lo hecho, las decisiones y lo pendiente"*.
 - Nunca pasar a la siguiente fase con pruebas en rojo.
-- Requisitos en tu máquina: Android Studio (SDK + `ANDROID_HOME`), JDK 17+, Node LTS, `firebase-tools` y un teléfono o emulador con Google Play Services.
+- Requisitos en tu máquina: Android Studio (SDK + `ANDROID_HOME`), JDK 17+ para Gradle, **JDK 21+ para los emuladores de Firebase** (`firebase emulators:*` lo exige; si tienes ambos, exporta `JAVA_HOME` al 21+ solo para esos comandos), Node LTS, `firebase-tools` y un teléfono o emulador con Google Play Services.
 
 ---
 

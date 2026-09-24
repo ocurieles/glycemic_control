@@ -34,9 +34,10 @@ La especificación completa está en `docs/`. **Léela antes de cada fase:**
 ```bash
 # Backend
 cd firebase/functions && npm ci
-npm run build && npm test
+npm run build && npm test                    # unitarias puras (schedule, messages); no requiere emulador
+npm run typecheck                            # incluye src/__tests__ (excluidos del build de deploy)
 cd .. && firebase emulators:start            # auth, firestore, functions
-firebase emulators:exec "npm --prefix functions test"
+firebase emulators:exec --only firestore,functions "npm --prefix functions run test:all"   # + reglas y triggers (necesita build previo)
 firebase deploy --only firestore:rules,firestore:indexes,functions
 
 # Android
@@ -57,7 +58,24 @@ En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F0 (preparación manual)
-- Hecho: especificación
-- Decisiones tomadas durante la implementación: —
-- Pendiente / riesgos abiertos: validar la vibración en modo silencio en el teléfono real de Cesar; confirmar los headers actuales de LibreLinkUp (F7).
+- Fase actual: F1 cerrada (backend base). Siguiente: F2 (app Android base y vinculación).
+- Hecho:
+  - Repo Android inicializado (git init + commit de la especificación).
+  - `firebase/` completo: `firebase.json` (emuladores auth/firestore/functions, `us-east1`), `firestore.rules` (docs/03 §4 con `validSettings()`), `firestore.indexes.json`, `.firebaserc` (placeholder de projectId).
+  - `functions/src/time.ts` y `schedule.ts`: reglas de slots (docs/03 §2), timezone-aware con `luxon` (a diferencia de `schedule_reference.py`, que es naive). Los 22 vectores de `docs/schedule-vectors.json` pasan (`npm test`).
+  - `functions/src/families.ts`: `createFamily`, `createPairingCode`, `joinFamily` (rate limit 10/h), `leaveFamily`.
+  - `functions/src/messaging.ts`: `sendToParents`/`sendToChild`, limpieza de `fcmToken` inválido.
+  - `functions/src/messages.ts` (textos exactos de docs/04, es-VE) + `events.ts` (`onEventCreated`: checkin/sos/parent_message/sos_ack, idempotente por `processedAt`, `realAt = min(clientAt, createdAt)`, `syncedLate`, **sin LibreLinkUp todavía** → `glucoseError: "not_configured"`) + `settings.ts` (`onFamilyUpdated` → push `sync`).
+  - Pruebas: 28 unitarias (`schedule.ts`, `messages.ts`, sin emulador), 21 de `firestore.rules` (`@firebase/rules-unit-testing`) y 5 de integración de triggers (`onEventCreated`/`onFamilyUpdated`) contra los emuladores de Firestore + Functions. Las 54 pasan.
+- Decisiones tomadas durante la implementación:
+  - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta). Se revisará en cada fase si ya es viable subir.
+  - Runtime de Cloud Functions: **`nodejs22`** (el más nuevo con soporte estable al implementar). La máquina de desarrollo tiene Node 26; el emulador avisa el desfase pero corre igual.
+  - Se agregó `luxon` como dependencia del backend para el manejo de zonas horarias con DST real (el contrato en `docs/03`/`schedule_reference.py` asume naive porque `America/Caracas` no tiene DST, pero el código de producción sí debe manejarlo).
+  - Se quitó `firebase-functions-test` de las devDependencies: su última versión (3.5.0) todavía no declara compatibilidad de peer-deps con `firebase-admin@14`. Las pruebas de triggers se hicieron en su lugar con `firebase-admin` directo contra los emuladores (`src/__tests__/events.test.ts`).
+  - Scripts de test separados en `functions/package.json`: `test` (unitarias puras, sin emulador), `test:rules` y `test:integration` (necesitan emuladores), y `test:all` que corre los tres. `CLAUDE.md` → Comandos actualizado para reflejarlo (el comando original `firebase emulators:exec "npm --prefix functions test"` no cubría reglas ni triggers).
+  - Requiere JDK ≥ 21 para los emuladores de Firebase (el proyecto tenía JDK 17); se usó `openjdk` de Homebrew. Pendiente decidir si documentarlo como prerrequisito fijo en `docs/10`.
+- Pendiente / riesgos abiertos:
+  - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
+  - Confirmar los headers actuales de LibreLinkUp antes de F7.
+  - `.firebaserc` tiene un projectId placeholder: falta reemplazarlo por el proyecto Firebase real (F0 manual) antes de desplegar.
+  - Actualizar `docs/10-despliegue.md` para mencionar el requisito de JDK ≥ 21 en la máquina de desarrollo (emuladores).

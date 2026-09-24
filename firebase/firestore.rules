@@ -1,0 +1,79 @@
+rules_version = '2';
+
+// Reglas de Firestore — ver docs/03-modelo-de-datos.md §4.
+// validSettings() replica la tabla de docs/03 §1.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function member(fid) { return signedIn() && request.auth.token.familyId == fid; }
+    function role() { return request.auth.token.role; }
+
+    function isHHmm(s) {
+      return s is string
+        && s.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+    }
+
+    function validSettings(s) {
+      return s.enabled is bool
+        && s.intervalMinutes is int && s.intervalMinutes >= 5 && s.intervalMinutes <= 240
+        && s.days is list && s.days.size() >= 1
+        && s.days.toSet().size() == s.days.size()
+        && s.days.hasOnly([1, 2, 3, 4, 5, 6, 7])
+        && isHHmm(s.startTime) && isHHmm(s.endTime) && s.startTime < s.endTime
+        && s.escalationMinutes is int && s.escalationMinutes >= 1 && s.escalationMinutes <= 60
+        && s.nudgeMinutes is int && s.nudgeMinutes >= 0 && s.nudgeMinutes <= 30
+        && s.timezone is string && s.timezone.size() > 0
+        && s.lowThreshold is int && s.lowThreshold >= 40 && s.lowThreshold <= 120
+        && s.highThreshold is int && s.highThreshold >= 120 && s.highThreshold <= 400
+        && s.smsFallbackEnabled is bool
+        && s.smsNumbers is list && s.smsNumbers.size() <= 3
+        && (!('childPhone' in s) || s.childPhone == null || s.childPhone is string);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['fcmToken', 'tokenUpdatedAt', 'appVersion']);
+      // create/delete: solo Functions (Admin SDK)
+    }
+
+    match /families/{fid} {
+      allow read: if member(fid);
+      allow update: if member(fid) && role() == 'parent'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['settings', 'childName'])
+        && (!('settings' in request.resource.data.diff(resource.data).affectedKeys())
+             || validSettings(request.resource.data.settings));
+      // create/delete: solo Functions (Admin SDK)
+
+      match /events/{eid} {
+        allow read: if member(fid);
+        allow create: if member(fid)
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.clientAt is timestamp
+          && request.resource.data.clientAt <= request.time + duration.value(24, 'h')   // reloj adelantado: el servidor usa min(clientAt, createdAt)
+          && request.resource.data.clientAt >= request.time - duration.value(7, 'd')
+          && request.resource.data.keys().hasOnly(
+               ['type', 'createdBy', 'createdAt', 'clientAt', 'clockOffsetMs', 'source', 'text', 'location', 'smsSent', 'replyTo'])
+          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos'])
+           || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack']))
+          && (!('text' in request.resource.data) || request.resource.data.text.size() <= 120)
+          && (!('clockOffsetMs' in request.resource.data) || (request.resource.data.clockOffsetMs is int
+               && request.resource.data.clockOffsetMs >= -604800000 && request.resource.data.clockOffsetMs <= 604800000));
+        // update/delete: solo Functions (Admin SDK)
+      }
+
+      match /days/{day} {
+        allow read: if member(fid);
+        // write: solo Functions (Admin SDK)
+      }
+
+      match /private/{doc} { allow read, write: if false; }
+      match /meta/{doc}    { allow read, write: if false; }
+    }
+
+    match /pairingCodes/{code} { allow read, write: if false; }
+    match /rateLimits/{uid}    { allow read, write: if false; }
+  }
+}

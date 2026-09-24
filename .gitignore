@@ -1,0 +1,25 @@
+# Backend (firebase/functions)
+firebase/functions/node_modules/
+firebase/functions/lib/
+firebase/functions/.env.*.local
+firebase/*.log
+firebase/firebase-debug*.log
+firebase/firestore-debug.log
+firebase/ui-debug.log
+firebase/.runtimeconfig.json
+
+# Android
+android/.gradle/
+android/.idea/
+android/local.properties
+android/**/build/
+android/app/google-services.json
+android/*.iml
+android/**/*.iml
+android/captures/
+android/.cxx/
+*.keystore
+*.jks
+
+# Sistema
+.DS_Store
