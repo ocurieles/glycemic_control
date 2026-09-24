@@ -1,5 +1,9 @@
 # 10 — Despliegue y puesta en marcha
 
+## Requisitos de la máquina de desarrollo
+- **JDK ≥ 21** para los emuladores de Firebase (`firebase emulators:*`); Gradle usa su propio JDK 17+ configurado aparte, sin conflicto entre ambos.
+- **Android SDK Platform 37 (o la más nueva estable) + Build-Tools a juego**, y **AGP 9+** en `android/gradle/libs.versions.toml`: desde fines de 2026 las versiones "última estable" de Compose/Lifecycle/AndroidX Core exigen `compileSdk ≥ 37` y Android Gradle Plugin ≥ 9.1 (AGP 9 además integra Kotlin y ya no usa el plugin `org.jetbrains.kotlin.android`). Instala la plataforma con `sdkmanager "platforms;android-37.2" "build-tools;37.0.0"` si Android Studio no la trae. **Revisa esto al empezar cada fase**, porque el mínimo sube con el tiempo.
+
 ## Firebase (una vez)
 1. En console.firebase.google.com, crear el proyecto `checkin-familia` (Analytics opcional; puede desactivarse).
 2. **Plan Blaze:** Uso y facturación → Modificar plan → agregar tarjeta.

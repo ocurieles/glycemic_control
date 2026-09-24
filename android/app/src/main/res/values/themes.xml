@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema mínimo para el manifest; el look real lo da el M3 theme de Compose (ui/theme). -->
+    <style name="Theme.Checkin" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

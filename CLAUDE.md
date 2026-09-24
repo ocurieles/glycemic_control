@@ -58,24 +58,30 @@ En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F1 cerrada y **desplegada en el proyecto real `checkin-familia`** (us-east1). Siguiente: F2 (app Android base y vinculación).
+- Fase actual: F2 cerrada (app Android base y vinculación). Siguiente: F3 (recordatorios del niño).
 - Hecho:
-  - Repo Android inicializado (git init + commit de la especificación).
-  - `firebase/` completo: `firebase.json` (emuladores auth/firestore/functions, `us-east1`), `firestore.rules` (docs/03 §4 con `validSettings()`), `firestore.indexes.json`, `.firebaserc` (placeholder de projectId).
-  - `functions/src/time.ts` y `schedule.ts`: reglas de slots (docs/03 §2), timezone-aware con `luxon` (a diferencia de `schedule_reference.py`, que es naive). Los 22 vectores de `docs/schedule-vectors.json` pasan (`npm test`).
-  - `functions/src/families.ts`: `createFamily`, `createPairingCode`, `joinFamily` (rate limit 10/h), `leaveFamily`.
-  - `functions/src/messaging.ts`: `sendToParents`/`sendToChild`, limpieza de `fcmToken` inválido.
-  - `functions/src/messages.ts` (textos exactos de docs/04, es-VE) + `events.ts` (`onEventCreated`: checkin/sos/parent_message/sos_ack, idempotente por `processedAt`, `realAt = min(clientAt, createdAt)`, `syncedLate`, **sin LibreLinkUp todavía** → `glucoseError: "not_configured"`) + `settings.ts` (`onFamilyUpdated` → push `sync`).
-  - Pruebas: 28 unitarias (`schedule.ts`, `messages.ts`, sin emulador), 21 de `firestore.rules` (`@firebase/rules-unit-testing`) y 5 de integración de triggers (`onEventCreated`/`onFamilyUpdated`) contra los emuladores de Firestore + Functions. Las 54 pasan.
+  - **F0/F1**: repo git, backend Functions v2 desplegado en el proyecto real `checkin-familia` (us-east1), Auth anónima + Firestore habilitados, `google-services.json` en `android/app/`.
+  - **F1 fix post-deploy**: `joinFamily` pedía `displayName` también al niño y sobrescribía `families.childName`; ahora es obligatorio solo para `role: "parent"` y el niño hereda el `childName` ya existente (docs/04 corregido, función redesplegada).
+  - **F2**: proyecto Android completo en `android/` (Kotlin + Compose M3, `minSdk 26`, paquete `com.ingeint.checkin`, nombre "Check-in"):
+    - `CheckinApp` + `AppContainer` (DI manual): Auth anónima persistente, Firestore/Functions(`us-east1`)/Messaging, apuntando a los emuladores en debug (`BuildConfig.USE_EMULATORS`, host `10.2.0.2`/`10.0.2.2`).
+    - `SetupScreen` completo: elegir rol → crear familia / unirse con código (padre) o solo código (niño) → `getIdToken(true)` tras vincular → guarda rol/familia/settings en DataStore (`Prefs`) → registra canales.
+    - `Channels`: `child_reminder`/`child_message` (sin sonido, `VISIBILITY_PRIVATE`), `parent_checkin`/`parent_alert`/`parent_sos` (con alarma, bypassa DND), `sync_status`; se crean solo para el rol activo.
+    - `Haptics` con los 5 patrones de docs/01 y `USAGE_ALARM`.
+    - `PushService` (`FirebaseMessagingService`): switch por `type` de docs/04; `sync` ya refresca settings cacheados; el resto son handlers mínimos con `TODO(F3/F5)`.
+    - `PermissionsWizardScreen` (rol-dependiente) y `DiagnosticsScreen` (checklist de permisos, modo de timbre, practicar cada vibración).
+    - Tests: `ChildStringsForbiddenWordsTest` (JVM, ignora comentarios XML) y `ChildChannelsInstrumentedTest` (androidTest, compila OK; **no se corrió** — necesita emulador/dispositivo Android, no disponible en esta máquina de desarrollo todavía).
+  - `./gradlew assembleDebug testDebugUnitTest lint` — **todo en verde**.
 - Decisiones tomadas durante la implementación:
-  - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta). Se revisará en cada fase si ya es viable subir.
-  - Runtime de Cloud Functions: **`nodejs22`** (el más nuevo con soporte estable al implementar). La máquina de desarrollo tiene Node 26; el emulador avisa el desfase pero corre igual.
-  - Se agregó `luxon` como dependencia del backend para el manejo de zonas horarias con DST real (el contrato en `docs/03`/`schedule_reference.py` asume naive porque `America/Caracas` no tiene DST, pero el código de producción sí debe manejarlo).
-  - Se quitó `firebase-functions-test` de las devDependencies: su última versión (3.5.0) todavía no declara compatibilidad de peer-deps con `firebase-admin@14`. Las pruebas de triggers se hicieron en su lugar con `firebase-admin` directo contra los emuladores (`src/__tests__/events.test.ts`).
-  - Scripts de test separados en `functions/package.json`: `test` (unitarias puras, sin emulador), `test:rules` y `test:integration` (necesitan emuladores), y `test:all` que corre los tres. `CLAUDE.md` → Comandos actualizado para reflejarlo (el comando original `firebase emulators:exec "npm --prefix functions test"` no cubría reglas ni triggers).
-  - Requiere JDK ≥ 21 para los emuladores de Firebase (el proyecto tenía JDK 17); se usó `openjdk` de Homebrew. Pendiente decidir si documentarlo como prerrequisito fijo en `docs/10`.
+  - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta).
+  - Runtime de Cloud Functions: **`nodejs22`**. Se agregó `luxon` al backend para manejo de timezone con DST real.
+  - Se quitó `firebase-functions-test` de las devDependencies (incompatible con `firebase-admin@14` todavía); las pruebas de triggers usan `firebase-admin` directo contra los emuladores.
+  - Scripts de test separados en `functions/package.json` (`test`/`test:rules`/`test:integration`/`test:all`); `CLAUDE.md` → Comandos actualizado.
+  - Requiere JDK ≥ 21 para los emuladores de Firebase (Gradle usa JDK 17 aparte, sin conflicto).
+  - **AGP 9.4.1 + `compileSdk/targetSdk 37`**, sin el plugin `org.jetbrains.kotlin.android` (AGP 9+ trae Kotlin integrado, ver `kotl.in/gradle/agp-built-in-kotlin`). Se intentó primero con AGP 8.13.2 (más conservador, como con TypeScript), pero las versiones "última estable" de Compose/Lifecycle/Core de sept. 2026 ya exigen API 37 y AGP 9.1+, así que downgradear esas librerías habría sido una persecución sin fin. Requirió instalar `platforms;android-37.2` + `build-tools;37.0.0` vía `cmdline-tools`/`sdkmanager` y regenerar el wrapper con **Gradle 9.7.1** (AGP 8.x deja de funcionar desde Gradle 9.6+).
 - Pendiente / riesgos abiertos:
+  - **Correr `./gradlew connectedDebugAndroidTest` en un emulador/dispositivo real** (verifica que los canales `child_*` no tengan sonido) — no se pudo ejecutar en esta sesión por falta de un AVD/dispositivo conectado.
+  - Probar de extremo a extremo la vinculación contra los emuladores de Firebase (`firebase emulators:start` + la app en modo debug): un padre crea la familia, el niño se une con el código, y un push de prueba llega al rol correcto — pendiente de hacer con un dispositivo/emulador.
   - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
   - Confirmar los headers actuales de LibreLinkUp antes de F7.
-  - `.firebaserc` tiene un projectId placeholder: falta reemplazarlo por el proyecto Firebase real (F0 manual) antes de desplegar.
-  - Actualizar `docs/10-despliegue.md` para mencionar el requisito de JDK ≥ 21 en la máquina de desarrollo (emuladores).
+  - `PushService.onNewToken` genera un warning del compilador ("overrides a deprecated member"); revisar si el SDK de Firebase Messaging 34.19.0 ya tiene un reemplazo antes de F5.
+  - Actualizar `docs/10-despliegue.md` para mencionar JDK ≥ 21 (emuladores) y `compileSdk 37`/`platforms;android-37.2` como requisito del SDK de Android.

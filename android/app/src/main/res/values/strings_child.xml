@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CLAUDE.md regla 3 / docs/06 "Reglas de discreción #2": textos visibles del rol
+  niño. PROHIBIDAS aquí: glucosa, glicemia, glucemia, diabetes, azúcar, sensor,
+  insulina (en cualquier acentuación/mayúscula). Hay un test que lo verifica
+  (ChildStringsForbiddenWordsTest) y no se desactiva.
+-->
+<resources>
+    <string name="setup_child_join_title">Ingresa el código que te dieron</string>
+    <string name="setup_child_code_hint">Código de 6 dígitos</string>
+
+    <string name="child_home_placeholder_title">Check-in</string>
+    <string name="child_home_placeholder_body">Ya estás vinculado. El botón para avisar que te revisaste llega en la próxima parte.</string>
+
+    <string name="permissions_title">Permisos</string>
+    <string name="permissions_notifications">Notificaciones</string>
+    <string name="permissions_notifications_desc">Para que te avisemos</string>
+    <string name="permissions_exact_alarms">Recordatorios puntuales</string>
+    <string name="permissions_exact_alarms_desc">Para que los avisos suenen a tiempo</string>
+    <string name="permissions_battery">Batería sin restricciones</string>
+    <string name="permissions_battery_desc">Para que los avisos no se detengan</string>
+    <string name="permissions_location">Ubicación</string>
+    <string name="permissions_location_desc">Solo para el botón de ayuda</string>
+    <string name="permissions_sms">Mensajes de texto</string>
+    <string name="permissions_sms_desc">Como respaldo del botón de ayuda sin internet</string>
+    <string name="permissions_dnd">No interrumpir</string>
+    <string name="permissions_dnd_desc">Para que las alertas urgentes se escuchen</string>
+    <string name="permissions_full_screen">Pantalla completa</string>
+    <string name="permissions_full_screen_desc">Para ver las alertas urgentes de inmediato</string>
+    <string name="permissions_grant">Permitir</string>
+    <string name="permissions_open_settings">Abrir ajustes</string>
+    <string name="permissions_granted">Listo</string>
+    <string name="permissions_continue">Continuar</string>
+    <string name="permissions_skip">Ahora no</string>
+
+    <string name="diagnostics_title">Diagnóstico</string>
+    <string name="diagnostics_ring_mode_title">Modo de sonido del teléfono</string>
+    <string name="diagnostics_ring_mode_normal">Normal</string>
+    <string name="diagnostics_ring_mode_silent">Silencio</string>
+    <string name="diagnostics_ring_mode_vibrate">Vibrar</string>
+    <string name="diagnostics_practice_title">Practica los avisos</string>
+    <string name="diagnostics_practice_reminder">Recordatorio</string>
+    <string name="diagnostics_practice_message">Mensaje</string>
+    <string name="diagnostics_practice_confirm">Confirmado</string>
+    <string name="diagnostics_practice_seen">Visto</string>
+    <string name="diagnostics_practice_tap">Toque</string>
+
+    <string name="notification_reminder_title">Recordatorio</string>
+    <string name="notification_message_title">Mensaje</string>
+</resources>

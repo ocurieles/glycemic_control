@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Check-in</string>
+
+    <!-- Setup: elección de rol y vinculación (docs/06 SetupScreen). Textos neutros
+         de todas formas (no cuestan nada), pero esta parte NO está bajo el test de
+         palabras prohibidas: ese cubre res/values/strings_child.xml. -->
+    <string name="setup_who_title">¿Quién usará este teléfono?</string>
+    <string name="setup_role_parent">Papá/Mamá</string>
+    <string name="setup_role_child">El niño</string>
+
+    <string name="setup_parent_choice_title">¿Qué quieres hacer?</string>
+    <string name="setup_create_family_title">Crear familia</string>
+    <string name="setup_join_family_title">Unirme con código</string>
+
+    <string name="setup_child_name_label">Nombre del niño</string>
+    <string name="setup_parent_name_label">¿Cómo te llamas?</string>
+    <string name="setup_code_label">Código de 6 dígitos</string>
+
+    <string name="setup_create_button">Crear familia</string>
+    <string name="setup_join_button">Unirme</string>
+    <string name="setup_back">Atrás</string>
+    <string name="setup_continue">Continuar</string>
+
+    <string name="setup_pairing_code_title">Comparte este código con el otro padre</string>
+    <string name="setup_pairing_code_expires">Válido por 30 minutos</string>
+    <string name="setup_generic_error">Algo salió mal. Intenta de nuevo.</string>
+
+    <string name="parent_home_placeholder_title">¡Listo, %1$s!</string>
+    <string name="parent_home_placeholder_body">Estás vinculado a la familia de %1$s. El resto de la app (recordatorios, cumplimiento, mensajes) llega en las próximas fases.</string>
+    <string name="settings_icon_description">Ajustes</string>
+</resources>
