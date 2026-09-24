@@ -98,6 +98,22 @@ class SyncWorkerPayloadTest {
     }
 
     @Test
+    fun `insulin_dose incluye doseUnits`() {
+        val event =
+            OutboxEvent(
+                id = "e5",
+                type = OutboxEventType.INSULIN_DOSE,
+                doseUnits = 1.5,
+                clientAt = 1_700_000_000_000L,
+                source = "app",
+                recordedAt = 1_700_000_000_000L,
+            )
+        val payload = buildPayload(event, "childUid")
+        assertEquals("insulin_dose", payload["type"])
+        assertEquals(1.5, payload["doseUnits"])
+    }
+
+    @Test
     fun `createdAt siempre es un FieldValue serverTimestamp`() {
         val payload = buildPayload(checkinEvent(), "uid1")
         val createdAt = payload["createdAt"]

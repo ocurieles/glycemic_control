@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -13,12 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +42,7 @@ import com.ingeint.checkin.R
 import kotlinx.coroutines.delay
 
 private const val HELP_HOLD_MS = 2000L
+private val QUICK_LOG_DOSES = listOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
 
 /**
  * Pantalla del niño (docs/06 "Niño (ChildScreen)"). "Ya me revisé" y "Ayuda" ya
@@ -45,6 +51,7 @@ private const val HELP_HOLD_MS = 2000L
 @Composable
 fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    var showQuickLog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -82,8 +89,51 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
         IconButton(onClick = onOpenDiagnostics, modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)) {
             Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.permissions_title))
         }
+
+        // Discreto a propósito: mismo tamaño/tono que el de ajustes, sin texto junto al
+        // botón principal (docs/01, pedido 2026-09-24 — ver Punto 3 de la conversación).
+        IconButton(onClick = { showQuickLog = true }, modifier = Modifier.padding(8.dp).align(Alignment.TopStart)) {
+            Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.child_quick_log_button))
+        }
+    }
+
+    if (showQuickLog) {
+        QuickLogDialog(
+            doseLogged = state.doseLogged,
+            onPick = viewModel::logInsulinDose,
+            onDismiss = { showQuickLog = false },
+        )
     }
 }
+
+@Composable
+private fun QuickLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.child_quick_log_title)) },
+        text = {
+            Column {
+                if (doseLogged) {
+                    Text(stringResource(R.string.child_quick_log_done), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                }
+                QUICK_LOG_DOSES.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { dose ->
+                            FilterChip(selected = false, onClick = { onPick(dose) }, label = { Text(dose.toString()) })
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.child_quick_log_cancel)) } },
+    )
+}
+
+/** Mismas flechas que el backend (`TREND_ARROWS` de `messages.ts`, docs/04). */
+private val TREND_ARROWS = mapOf(1L to "↓", 2L to "↘", 3L to "→", 4L to "↗", 5L to "↑")
 
 @Composable
 private fun CheckinStatusText(state: ChildUiState) {
@@ -94,6 +144,13 @@ private fun CheckinStatusText(state: ChildUiState) {
             CheckinStatus.NONE -> null
         }
     text?.let { Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
+
+    // Solo aparece DESPUÉS de tocar el botón (docs/01, pedido 2026-09-24): nunca antes,
+    // nunca en una notificación — solo dentro de la app, en este mismo lugar.
+    state.lastCheckinGlucoseValueMgDl?.let { value ->
+        val arrow = TREND_ARROWS[state.lastCheckinGlucoseTrend] ?: ""
+        Text("$value $arrow", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+    }
 }
 
 @Composable

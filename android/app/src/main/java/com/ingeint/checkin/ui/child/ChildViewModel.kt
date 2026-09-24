@@ -44,6 +44,14 @@ data class ChildUiState(
     val checkinStatusTimeText: String? = null,
     val pendingCount: Int = 0,
     val sosStatusText: String? = null,
+    /**
+     * Valor del último check-in (docs/01, pedido 2026-09-24): solo se llena DESPUÉS de
+     * tocar "Ya me revisé", nunca antes — así no queda visible en pantalla para quien
+     * mire de reojo antes de que Cesar decida revisarse.
+     */
+    val lastCheckinGlucoseValueMgDl: Long? = null,
+    val lastCheckinGlucoseTrend: Long? = null,
+    val doseLogged: Boolean = false,
 )
 
 /**
@@ -55,6 +63,7 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
     val state: StateFlow<ChildUiState> = _state.asStateFlow()
 
     private var familyListener: ListenerRegistration? = null
+    private var lastCheckinListener: ListenerRegistration? = null
     private val context: Context get() = container.appContextForChannels
 
     init {
@@ -77,16 +86,66 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
         Haptics.vibrate(context, VibrationPattern.TAP)
         ChildNotifier.cancelReminder(context)
         ReminderScheduler(context).cancelNudge()
+        _state.value = _state.value.copy(lastCheckinGlucoseValueMgDl = null, lastCheckinGlucoseTrend = null)
+        viewModelScope.launch {
+            val clientAt = container.prefs.correctedNowMillis()
+            val offset = container.prefs.clockOffsetMs.first()
+            val event =
+                container.outboxRepository.record(
+                    type = OutboxEventType.CHECKIN,
+                    clientAtMillis = clientAt,
+                    clockOffsetMs = offset,
+                    source = "app",
+                )
+            SyncWorker.enqueue(context)
+            watchCheckinResult(event.id)
+        }
+    }
+
+    /**
+     * Muestra el valor del check-in dentro de la app, solo tras tocar el botón (docs/01):
+     * escucha el documento del propio evento hasta que el backend lo procese y traiga
+     * `glucose` (o quede sin él, si LibreLinkUp no tiene una lectura reciente).
+     */
+    private fun watchCheckinResult(eventId: String) {
+        lastCheckinListener?.remove()
+        viewModelScope.launch {
+            val familyId = container.prefs.familyId.first() ?: return@launch
+            lastCheckinListener =
+                container.firestore
+                    .collection("families").document(familyId)
+                    .collection("events").document(eventId)
+                    .addSnapshotListener { snap, _ ->
+                        @Suppress("UNCHECKED_CAST")
+                        val glucose = snap?.get("glucose") as? Map<String, Any?>
+                        if (glucose != null) {
+                            _state.value =
+                                _state.value.copy(
+                                    lastCheckinGlucoseValueMgDl = (glucose["valueMgDl"] as? Number)?.toLong(),
+                                    lastCheckinGlucoseTrend = (glucose["trend"] as? Number)?.toLong(),
+                                )
+                        }
+                    }
+        }
+    }
+
+    /** Registro rápido (docs/01, pedido 2026-09-24): un toque, sin pantallas extra. */
+    fun logInsulinDose(units: Double) {
+        Haptics.vibrate(context, VibrationPattern.TAP)
         viewModelScope.launch {
             val clientAt = container.prefs.correctedNowMillis()
             val offset = container.prefs.clockOffsetMs.first()
             container.outboxRepository.record(
-                type = OutboxEventType.CHECKIN,
+                type = OutboxEventType.INSULIN_DOSE,
                 clientAtMillis = clientAt,
                 clockOffsetMs = offset,
                 source = "app",
+                doseUnits = units,
             )
             SyncWorker.enqueue(context)
+            _state.value = _state.value.copy(doseLogged = true)
+            delay(2_000)
+            _state.value = _state.value.copy(doseLogged = false)
         }
     }
 
@@ -196,5 +255,6 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
 
     override fun onCleared() {
         familyListener?.remove()
+        lastCheckinListener?.remove()
     }
 }

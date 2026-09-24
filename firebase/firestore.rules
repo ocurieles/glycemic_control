@@ -55,12 +55,14 @@ service cloud.firestore {
           && request.resource.data.clientAt <= request.time + duration.value(24, 'h')   // reloj adelantado: el servidor usa min(clientAt, createdAt)
           && request.resource.data.clientAt >= request.time - duration.value(7, 'd')
           && request.resource.data.keys().hasOnly(
-               ['type', 'createdBy', 'createdAt', 'clientAt', 'clockOffsetMs', 'source', 'text', 'location', 'smsSent', 'replyTo'])
-          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos'])
+               ['type', 'createdBy', 'createdAt', 'clientAt', 'clockOffsetMs', 'source', 'text', 'location', 'smsSent', 'replyTo', 'doseUnits'])
+          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos', 'insulin_dose'])
            || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack']))
           && (!('text' in request.resource.data) || request.resource.data.text.size() <= 120)
           && (!('clockOffsetMs' in request.resource.data) || (request.resource.data.clockOffsetMs is int
-               && request.resource.data.clockOffsetMs >= -604800000 && request.resource.data.clockOffsetMs <= 604800000));
+               && request.resource.data.clockOffsetMs >= -604800000 && request.resource.data.clockOffsetMs <= 604800000))
+          && (request.resource.data.type != 'insulin_dose'
+               || request.resource.data.doseUnits in [0.5, 1, 1.5, 2, 2.5, 3]);
         // update/delete: solo Functions (Admin SDK)
       }
 

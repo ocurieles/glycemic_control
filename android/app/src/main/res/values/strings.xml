@@ -52,6 +52,7 @@
     <string name="parent_event_sos">SOS</string>
     <string name="parent_event_parent_message">Mensaje</string>
     <string name="parent_event_sos_ack">Respuesta</string>
+    <string name="parent_event_insulin_dose">Insulina registrada</string>
 
     <string name="parent_settings_title">Ajustes</string>
     <string name="parent_settings_schedule_title">Horario</string>

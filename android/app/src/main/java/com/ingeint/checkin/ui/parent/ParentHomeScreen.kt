@@ -172,6 +172,9 @@ private fun QuickMessages(onSend: (String) -> Unit) {
     }
 }
 
+/** Mismas flechas que `TREND_ARROWS` de `messages.ts` (docs/04). */
+private val TREND_ARROWS = mapOf(1L to "↓", 2L to "↘", 3L to "→", 4L to "↗", 5L to "↑")
+
 @Composable
 private fun TimelineRow(event: TimelineEvent) {
     val label =
@@ -180,6 +183,7 @@ private fun TimelineRow(event: TimelineEvent) {
             "sos" -> stringResource(R.string.parent_event_sos)
             "parent_message" -> stringResource(R.string.parent_event_parent_message)
             "sos_ack" -> stringResource(R.string.parent_event_sos_ack)
+            "insulin_dose" -> stringResource(R.string.parent_event_insulin_dose)
             else -> event.type
         }
     val esVe = remember { Locale.Builder().setLanguage("es").setRegion("VE").build() }
@@ -199,6 +203,16 @@ private fun TimelineRow(event: TimelineEvent) {
                 )
             }
         }
+        event.glucoseValueMgDl?.let { value ->
+            val arrow = TREND_ARROWS[event.glucoseTrend] ?: ""
+            val color =
+                when (event.glucoseLevel) {
+                    "low", "high" -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+            Text("$value mg/dL $arrow", style = MaterialTheme.typography.bodySmall, color = color)
+        }
+        event.doseUnits?.let { Text("$it U", style = MaterialTheme.typography.bodySmall) }
         event.text?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         event.senderName?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))

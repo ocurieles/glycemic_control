@@ -117,7 +117,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 
 | Campo | Escribe | Notas |
 |---|---|---|
-| `type` | cliente | `checkin`, `sos` (niño); `parent_message`, `sos_ack` (padre) |
+| `type` | cliente | `checkin`, `sos`, `insulin_dose` (niño); `parent_message`, `sos_ack` (padre) |
 | `createdBy` | cliente | = `request.auth.uid` |
 | `createdAt` | cliente | `serverTimestamp()`; las reglas exigen `== request.time` |
 | `clientAt` | cliente | Timestamp del momento real del toque, **ya corregido** con `clockOffsetMs` |
@@ -128,6 +128,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 | `location` | cliente | `{ lat, lng, accuracyM }` (solo en SOS) |
 | `smsSent` | cliente | SOS: se envió SMS de respaldo |
 | `replyTo` | cliente | `sos_ack`: id del SOS |
+| `doseUnits` | cliente | `insulin_dose`: uno de `0.5, 1, 1.5, 2, 2.5, 3` (validado en las reglas) |
 | `senderName` | Functions | |
 | `syncedLate` | Functions | `createdAt − realAt > 120 s` |
 | `glucose` | Functions | `{ valueMgDl, trend (1–5), readingAt, source: "latest"\|"graph", level: "low"\|"normal"\|"high" }` |
@@ -222,8 +223,9 @@ service cloud.firestore {
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | TEXT PK | UUID, el mismo que el `eventId` de Firestore |
-| `type` | TEXT | niño: `checkin` \| `sos`; padre: `parent_message` \| `sos_ack` |
+| `type` | TEXT | niño: `checkin` \| `sos` \| `insulin_dose`; padre: `parent_message` \| `sos_ack` |
 | `text`, `replyTo` | TEXT? | mensajes y respuestas de los padres |
+| `doseUnits` | REAL? | solo `insulin_dose` |
 | `clockOffsetMs` | INTEGER? | ver 07 |
 | `clientAt` | INTEGER | epoch ms |
 | `source` | TEXT | |

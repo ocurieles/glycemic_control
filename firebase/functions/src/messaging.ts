@@ -27,6 +27,7 @@ export const PUSH_TTL_SECONDS = {
   sos_glucose: 3600,
   sos_ack_info: 3600,
   day_summary: 43200,
+  insulin_dose: 3600,
   parent_message: 1800,
   sos_ack: 3600,
   nudge: 300,

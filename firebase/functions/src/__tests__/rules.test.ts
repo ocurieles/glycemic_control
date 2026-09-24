@@ -157,6 +157,53 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("el niño puede crear un insulin_dose con una dosis permitida", async () => {
+    await seedFamily();
+    await assertSucceeds(
+      asChild()
+        .doc(`families/${FAMILY_ID}/events/e-dose1`)
+        .set({
+          type: "insulin_dose",
+          createdBy: CHILD_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+          doseUnits: 1.5,
+        }),
+    );
+  });
+
+  it("rechaza un insulin_dose con una dosis fuera de las permitidas", async () => {
+    await seedFamily();
+    await assertFails(
+      asChild()
+        .doc(`families/${FAMILY_ID}/events/e-dose2`)
+        .set({
+          type: "insulin_dose",
+          createdBy: CHILD_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+          doseUnits: 4,
+        }),
+    );
+  });
+
+  it("rechaza un insulin_dose sin doseUnits", async () => {
+    await seedFamily();
+    await assertFails(
+      asChild()
+        .doc(`families/${FAMILY_ID}/events/e-dose3`)
+        .set({
+          type: "insulin_dose",
+          createdBy: CHILD_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+        }),
+    );
+  });
+
   it("el niño no puede crear un parent_message", async () => {
     await seedFamily();
     await assertFails(

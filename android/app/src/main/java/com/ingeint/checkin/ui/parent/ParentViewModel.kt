@@ -23,6 +23,10 @@ data class TimelineEvent(
     val text: String?,
     val senderName: String?,
     val syncedLate: Boolean,
+    val glucoseValueMgDl: Long?,
+    val glucoseTrend: Long?,
+    val glucoseLevel: String?,
+    val doseUnits: Double?,
 )
 
 data class DayCompliance(
@@ -87,6 +91,8 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                         snap.documents.mapNotNull { doc ->
                             val type = doc.getString("type") ?: return@mapNotNull null
                             val realAt = doc.getTimestamp("realAt") ?: doc.getTimestamp("clientAt")
+                            @Suppress("UNCHECKED_CAST")
+                            val glucose = doc.get("glucose") as? Map<String, Any?>
                             TimelineEvent(
                                 id = doc.id,
                                 type = type,
@@ -94,6 +100,10 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                                 text = doc.getString("text"),
                                 senderName = doc.getString("senderName"),
                                 syncedLate = doc.getBoolean("syncedLate") ?: false,
+                                glucoseValueMgDl = (glucose?.get("valueMgDl") as? Number)?.toLong(),
+                                glucoseTrend = (glucose?.get("trend") as? Number)?.toLong(),
+                                glucoseLevel = glucose?.get("level") as? String,
+                                doseUnits = (doc.get("doseUnits") as? Number)?.toDouble(),
                             )
                         }
                     _state.value = _state.value.copy(timeline = events, activeSos = findActiveSos(events))

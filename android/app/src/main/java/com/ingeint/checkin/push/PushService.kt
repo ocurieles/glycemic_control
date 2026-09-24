@@ -135,6 +135,14 @@ class PushService : FirebaseMessagingService() {
                         data["body"].orEmpty(),
                         alert = false,
                     )
+                "insulin_dose" ->
+                    ParentNotifier.notifyCheckin(
+                        this@PushService,
+                        data["eventId"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                        alert = false,
+                    )
                 else -> Log.w(TAG, "tipo de push desconocido: ${data["type"]}")
             }
         }

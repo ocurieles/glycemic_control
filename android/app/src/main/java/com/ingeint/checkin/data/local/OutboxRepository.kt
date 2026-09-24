@@ -30,6 +30,7 @@ class OutboxRepository(private val dao: OutboxDao) {
         lng: Double? = null,
         accuracyM: Float? = null,
         smsSent: Boolean = false,
+        doseUnits: Double? = null,
     ): OutboxEvent {
         if (type == OutboxEventType.CHECKIN) {
             dao.lastOfType(type)?.let { last ->
@@ -50,6 +51,7 @@ class OutboxRepository(private val dao: OutboxDao) {
                 lng = lng,
                 accuracyM = accuracyM,
                 smsSent = smsSent,
+                doseUnits = doseUnits,
                 recordedAt = System.currentTimeMillis(),
             )
         dao.insert(event)

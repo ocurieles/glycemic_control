@@ -18,6 +18,13 @@
     <string name="child_help_button">Ayuda</string>
     <string name="child_help_hint">Mantén presionado 2 segundos</string>
 
+    <!-- Registro rápido (docs/01, pedido 2026-09-24): nombres a propósito genéricos,
+         nunca "insulina" ni "dosis médica" — ver CLAUDE.md regla 3. -->
+    <string name="child_quick_log_button">Registro rápido</string>
+    <string name="child_quick_log_title">Registro rápido</string>
+    <string name="child_quick_log_done">Registrado ✓</string>
+    <string name="child_quick_log_cancel">Cerrar</string>
+
     <string name="permissions_title">Permisos</string>
     <string name="permissions_notifications">Notificaciones</string>
     <string name="permissions_notifications_desc">Para que te avisemos</string>

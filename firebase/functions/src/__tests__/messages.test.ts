@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { formatCheckinMessage, formatSosMessage, formatTime } from "../messages";
+import { formatCheckinMessage, formatInsulinDoseMessage, formatSosMessage, formatTime } from "../messages";
 
 const tz = "America/Caracas";
 function at(hhmm: string): number {
@@ -61,6 +61,12 @@ describe("messages.ts — textos exactos de docs/04", () => {
       glucoseError: "not_configured",
     });
     expect(body).toBe("10:40 a. m.");
+  });
+
+  it("registro de dosis de insulina", () => {
+    const { title, body } = formatInsulinDoseMessage("Cesar", 1.5, at("10:40"));
+    expect(title).toBe("Cesar registró una dosis");
+    expect(body).toBe("1.5 U · 10:40 a. m.");
   });
 
   it("checkin_late (sincronizado tarde)", () => {
