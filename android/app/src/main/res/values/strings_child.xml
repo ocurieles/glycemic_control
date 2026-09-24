@@ -25,6 +25,8 @@
     <string name="permissions_exact_alarms_desc">Para que los avisos suenen a tiempo</string>
     <string name="permissions_battery">Batería sin restricciones</string>
     <string name="permissions_battery_desc">Para que los avisos no se detengan</string>
+    <string name="permissions_autostart">Inicio automático</string>
+    <string name="permissions_autostart_desc">Ajuste extra de este teléfono para que la app no se cierre sola</string>
     <string name="permissions_location">Ubicación</string>
     <string name="permissions_location_desc">Solo para el botón de ayuda</string>
     <string name="permissions_sms">Mensajes de texto</string>

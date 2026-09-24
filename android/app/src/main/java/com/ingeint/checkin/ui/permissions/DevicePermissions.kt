@@ -1,7 +1,9 @@
 package com.ingeint.checkin.ui.permissions
 
 import android.app.NotificationManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
@@ -48,6 +50,32 @@ object DevicePermissions {
             context.getSystemService<NotificationManager>()?.canUseFullScreenIntent() ?: true
         } else {
             true
+        }
+
+    /**
+     * Pantalla propia del fabricante para permitir "inicio automático"/evitar que mate la
+     * app en segundo plano (docs/08 F8). Android no tiene una API estándar para esto —
+     * son actividades conocidas de cada fabricante (ver dontkillmyapp.com); se resuelven
+     * en tiempo de ejecución y se ofrecen solo si existen en el teléfono.
+     */
+    private val manufacturerAutoStartComponents =
+        listOf(
+            ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+            ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+            ComponentName("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"),
+            ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+            ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"),
+            ComponentName("com.oneplus.security", "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity"),
+            ComponentName("com.asus.mobilemanager", "com.asus.mobilemanager.entry.FunctionActivity"),
+        )
+
+    /** `null` si el fabricante no tiene una pantalla conocida (o no existe en este teléfono). */
+    fun manufacturerAutoStartIntent(context: Context): Intent? =
+        manufacturerAutoStartComponents.firstNotNullOfOrNull { component ->
+            val intent = Intent().setComponent(component)
+            if (context.packageManager.resolveActivity(intent, 0) != null) intent else null
         }
 
     fun ringerModeDescription(context: Context): String {

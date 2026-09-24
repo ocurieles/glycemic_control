@@ -43,7 +43,12 @@ private val DAY_LABELS =
     )
 
 @Composable
-fun ParentSettingsScreen(viewModel: ParentSettingsViewModel, childName: String, onLeftFamily: () -> Unit) {
+fun ParentSettingsScreen(
+    viewModel: ParentSettingsViewModel,
+    childName: String,
+    onLeftFamily: () -> Unit,
+    onOpenAbout: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsState()
     var draft by remember(state.settings) { mutableStateOf(state.settings) }
 
@@ -76,6 +81,11 @@ fun ParentSettingsScreen(viewModel: ParentSettingsViewModel, childName: String, 
         item {
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
             FamilySection(viewModel, state)
+        }
+
+        item {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            OutlinedButton(onClick = onOpenAbout) { Text(stringResource(R.string.parent_settings_about)) }
         }
     }
 }

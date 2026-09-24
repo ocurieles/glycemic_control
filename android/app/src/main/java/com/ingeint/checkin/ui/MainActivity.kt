@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ingeint.checkin.CheckinApp
+import com.ingeint.checkin.ui.about.AboutScreen
 import com.ingeint.checkin.ui.child.ChildScreen
 import com.ingeint.checkin.ui.child.ChildViewModel
 import com.ingeint.checkin.ui.diagnostics.DiagnosticsScreen
@@ -36,6 +37,7 @@ private object Routes {
     const val PARENT_HOME = "parent_home/{childName}"
     const val PARENT_SETTINGS = "parent_settings/{childName}"
     const val DIAGNOSTICS = "diagnostics/{role}"
+    const val ABOUT = "about"
 
     fun permissions(role: String, childName: String) = "permissions/$role/$childName"
 
@@ -122,12 +124,17 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
                 onLeftFamily = {
                     navController.navigate(Routes.SETUP) { popUpTo(0) { inclusive = true } }
                 },
+                onOpenAbout = { navController.navigate(Routes.ABOUT) },
             )
         }
 
         composable(Routes.DIAGNOSTICS) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "parent"
             DiagnosticsScreen(role = role)
+        }
+
+        composable(Routes.ABOUT) {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
     }
 }

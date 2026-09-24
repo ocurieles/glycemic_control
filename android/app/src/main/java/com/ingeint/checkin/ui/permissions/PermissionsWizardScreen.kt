@@ -50,6 +50,8 @@ private data class PermissionItem(
 fun PermissionsWizardScreen(role: String, onContinue: () -> Unit) {
     val context = LocalContext.current
     var refreshTick by remember { mutableStateOf(0) }
+    var autoStartOpened by remember { mutableStateOf(false) }
+    val manufacturerAutoStartIntent = remember { DevicePermissions.manufacturerAutoStartIntent(context) }
 
     val notificationsLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refreshTick++ }
@@ -95,6 +97,18 @@ fun PermissionsWizardScreen(role: String, onContinue: () -> Unit) {
                         )
                     },
                 )
+                manufacturerAutoStartIntent?.let { intent ->
+                    add(
+                        PermissionItem(
+                            R.string.permissions_autostart,
+                            R.string.permissions_autostart_desc,
+                            { autoStartOpened }, // Android no expone si ya se activó: se marca "listo" al abrir el ajuste.
+                        ) { ctx, _ ->
+                            ctx.startActivity(intent)
+                            autoStartOpened = true
+                        },
+                    )
+                }
                 if (role == "child") {
                     add(
                         PermissionItem(

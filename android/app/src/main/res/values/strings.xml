@@ -84,4 +84,14 @@
     <string name="parent_settings_day_fri">V</string>
     <string name="parent_settings_day_sat">S</string>
     <string name="parent_settings_day_sun">D</string>
+    <string name="parent_settings_about">Acerca de</string>
+
+    <!-- docs/01 "Aviso de seguridad" (obligatorio en Ajustes → Acerca de): NO está bajo el
+         test de palabras prohibidas (esa lista es para strings_child.xml, no para esta
+         pantalla, que solo existe en Ajustes del rol padre). -->
+    <string name="about_title">Acerca de Check-in</string>
+    <string name="about_version">Versión %1$s</string>
+    <string name="about_safety_title">Aviso de seguridad</string>
+    <string name="about_safety_body">Esta app es una ayuda de comunicación y de hábitos. No sustituye las alarmas de LibreLink/LibreLinkUp ni las indicaciones médicas. Las alarmas de hipoglucemia e hiperglucemia deben seguir activas en LibreLinkUp.</string>
+    <string name="about_not_a_medical_device">No es un dispositivo médico ni reemplaza al sensor.</string>
 </resources>

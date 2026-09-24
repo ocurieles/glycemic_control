@@ -5,6 +5,43 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+/**
+ * `versionCode` automático (docs/08 F8): la cantidad de commits en la rama actual, que
+ * es monótona creciente mientras el historial sea lineal (nunca baja al hacer commits
+ * nuevos). Si no hay git disponible (p. ej. un checkout sin `.git`), cae a 1.
+ */
+fun gitCommitCount(): Int =
+    try {
+        val out = providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }.standardOutput.asText.get()
+        out.trim().toInt()
+    } catch (e: Exception) {
+        logger.warn("No se pudo calcular versionCode desde git ({}); se usa 1.", e.message)
+        1
+    }
+
+/**
+ * Firma de release (docs/08 F8, docs/10 "APK"): el keystore vive **fuera del repo**.
+ * Estas propiedades se leen de `~/.gradle/gradle.properties` (nunca de
+ * `android/gradle.properties`, que sí está en git) o de variables de entorno
+ * `ORG_GRADLE_PROJECT_*` / `-P` en la línea de comandos — nunca de un archivo del
+ * proyecto. Si faltan, `release` queda sin firmar (assembleDebug/lint/test siguen
+ * funcionando igual; solo `assembleRelease` no produce un APK instalable).
+ */
+fun gradleProp(name: String): String? = providers.gradleProperty(name).orNull?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = gradleProp("CHECKIN_RELEASE_STORE_FILE")
+val releaseStorePassword = gradleProp("CHECKIN_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = gradleProp("CHECKIN_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = gradleProp("CHECKIN_RELEASE_KEY_PASSWORD")
+val hasReleaseSigning = listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { it != null }
+
+if (!hasReleaseSigning) {
+    logger.warn(
+        "Firma de release no configurada: falta CHECKIN_RELEASE_STORE_FILE/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD " +
+            "en ~/.gradle/gradle.properties (ver docs/10-despliegue.md). assembleRelease producirá un APK sin firmar.",
+    )
+}
+
 android {
     namespace = "com.ingeint.checkin"
     compileSdk = 37
@@ -13,10 +50,21 @@ android {
         applicationId = "com.ingeint.checkin"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
+        versionCode = gitCommitCount()
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -29,7 +77,7 @@ android {
             isShrinkResources = true
             buildConfigField("boolean", "USE_EMULATORS", "false")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Firma de release: F8 (keystore fuera del repo, vía gradle.properties locales).
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
     }
 

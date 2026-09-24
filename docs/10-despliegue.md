@@ -29,13 +29,23 @@ firebase deploy --only firestore:rules,firestore:indexes,functions
 
 ## APK
 ```bash
+# Generar el keystore una sola vez (guardarlo con respaldo fuera del repo):
+keytool -genkeypair -v -keystore checkin-release.keystore -alias checkin -keyalg RSA -keysize 2048 -validity 10000
+
+# Agregar a ~/.gradle/gradle.properties (NUNCA a android/gradle.properties, que está en git):
+#   CHECKIN_RELEASE_STORE_FILE=/ruta/absoluta/checkin-release.keystore
+#   CHECKIN_RELEASE_STORE_PASSWORD=...
+#   CHECKIN_RELEASE_KEY_ALIAS=checkin
+#   CHECKIN_RELEASE_KEY_PASSWORD=...
+
 cd android
-./gradlew testDebugUnitTest lint
-./gradlew assembleRelease     # requiere keystore configurado (F8)
+./scripts/build_release.sh    # corre tests + lint + assembleRelease, y avisa dónde quedó el APK
 ```
 - **Keystore:** generarlo una sola vez y guardarlo con respaldo **fuera del repo**. Si se pierde, no se puede actualizar la app instalada sin desinstalarla.
+- Sin esas 4 propiedades, `assembleRelease` igual corre (para no bloquear CI/otros devs) pero produce un APK **sin firmar**, no instalable; el build avisa con un `logger.warn` durante la configuración.
+- `versionCode` es automático: la cantidad de commits del repo (`git rev-list --count HEAD`), siempre creciente mientras el historial sea lineal. No hay que subirlo a mano.
 - Distribución: copiar el APK a cada teléfono (WhatsApp, Drive o cable) → permitir "Instalar apps desconocidas" para esa fuente → instalar.
-- Actualizaciones: instalar el nuevo APK encima, firmado con el mismo keystore y un `versionCode` mayor.
+- Actualizaciones: instalar el nuevo APK encima, firmado con el mismo keystore (el `versionCode` ya sube solo con cada commit).
 
 ## Checklist del teléfono de Cesar
 - [ ] Instalar el APK y abrir → "Soy Cesar" → código del padre.
