@@ -17,7 +17,6 @@ import { describe, expect, it } from "vitest";
 // trigger nunca procesará el evento y el test fallará por timeout con un mensaje claro.
 const canRun = !!process.env.FIRESTORE_EMULATOR_HOST;
 if (!canRun) {
-  // eslint-disable-next-line no-console
   console.warn(
     "events.test.ts se saltea: necesita los emuladores de Firestore y Functions " +
       "(ver CLAUDE.md → firebase emulators:exec --only firestore,functions).",

@@ -107,15 +107,25 @@ export const createPairingCode = onCall(async (request) => {
   return issuePairingCode(familyId, auth.uid);
 });
 
-/** `joinFamily({ code, role, displayName }) → { familyId, childName, role }`. */
-export const joinFamily = onCall<{ code: string; role: "parent" | "child"; displayName: string }>(async (request) => {
+/**
+ * `joinFamily({ code, role, displayName? }) → { familyId, childName, role }`.
+ * `displayName` es obligatorio para `role: "parent"` (cómo se llama ese padre).
+ * Para `role: "child"` se ignora: el nombre del niño es el que ya puso el padre
+ * al crear la familia (`families.childName`), que además él puede editar
+ * después (docs/03 §3, docs/06 SetupScreen paso "Niño": solo pide el código).
+ */
+export const joinFamily = onCall<{ code: string; role: "parent" | "child"; displayName?: string }>(async (request) => {
   const auth = requireAuth(request);
-  const { code, role, displayName } = request.data ?? {};
-  if (!code || !role || !displayName?.trim()) {
+  const { code, role } = request.data ?? {};
+  const displayName = request.data?.displayName?.trim();
+  if (!code || !role) {
     throw new HttpsError("invalid-argument", "Faltan datos para vincular el teléfono.");
   }
   if (role !== "parent" && role !== "child") {
     throw new HttpsError("invalid-argument", "Rol inválido.");
+  }
+  if (role === "parent" && !displayName) {
+    throw new HttpsError("invalid-argument", "Falta tu nombre.");
   }
 
   const db = getFirestore();
@@ -134,14 +144,15 @@ export const joinFamily = onCall<{ code: string; role: "parent" | "child"; displ
 
     if (role === "child") {
       const oldChildUid = familySnap.get("childUid") as string | null | undefined;
-      tx.update(familyRef, { childUid: auth.uid, childName: displayName.trim() });
+      const childName = (familySnap.get("childName") as string) ?? "el niño";
+      tx.update(familyRef, { childUid: auth.uid });
       if (oldChildUid && oldChildUid !== auth.uid) {
         tx.delete(db.doc(`users/${oldChildUid}`));
       }
-      tx.set(db.doc(`users/${auth.uid}`), { familyId: fid, role: "child", displayName: displayName.trim() });
+      tx.set(db.doc(`users/${auth.uid}`), { familyId: fid, role: "child", displayName: childName });
     } else {
-      tx.update(familyRef, { [`parents.${auth.uid}`]: { name: displayName.trim() } });
-      tx.set(db.doc(`users/${auth.uid}`), { familyId: fid, role: "parent", displayName: displayName.trim() });
+      tx.update(familyRef, { [`parents.${auth.uid}`]: { name: displayName } });
+      tx.set(db.doc(`users/${auth.uid}`), { familyId: fid, role: "parent", displayName });
     }
 
     return fid;

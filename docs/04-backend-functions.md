@@ -23,11 +23,12 @@ El cliente debe hacer `getIdToken(true)` después de esta llamada y de `joinFami
 ### `createPairingCode() → { code, expiresAt }` (padre)
 Código de 6 dígitos con `crypto.randomInt`, único y con vigencia de 30 minutos. Borra los códigos anteriores de la misma familia.
 
-### `joinFamily({ code, role, displayName }) → { familyId, childName, role }`
+### `joinFamily({ code, role, displayName? }) → { familyId, childName, role }`
+- `displayName` es **obligatorio solo para `role: "parent"`** (cómo se llama ese padre, p. ej. "Mamá"). Para `role: "child"` se ignora aunque el cliente lo mande: el niño **no** escribe su nombre al vincularse (docs/06 SetupScreen paso "Niño": solo pide el código de 6 dígitos), su nombre ya lo puso el padre en `createFamily` y solo un padre puede cambiarlo después (`families.childName`, ver docs/03 §3).
 - Rate limit: máximo 10 intentos por uid por hora (`rateLimits/{uid}`); si se excede, `resource-exhausted`.
 - Código inexistente o vencido: `not-found` ("Código inválido o vencido").
-- `role = "child"`: actualiza `families.childUid = uid` y establece `displayName = childName`. Si había otro teléfono del niño: borra su `users` doc, quita sus claims y llama a `revokeRefreshTokens(oldUid)`.
-- `role = "parent"`: agrega el uid al mapa `parents`.
+- `role = "child"`: actualiza `families.childUid = uid` y establece `users.displayName = families.childName` (el ya existente). Si había otro teléfono del niño: borra su `users` doc, quita sus claims y llama a `revokeRefreshTokens(oldUid)`.
+- `role = "parent"`: agrega el uid al mapa `parents` con el `displayName` recibido.
 - Crea o actualiza `users/{uid}` y asigna los custom claims.
 - Todo se hace dentro de una transacción.
 
