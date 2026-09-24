@@ -54,6 +54,15 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Host de los emuladores de Firebase cuando USE_EMULATORS es true (solo debug,
+        // ver buildTypes.debug). "127.0.0.1" (con `adb reverse`) de forma normal, pero eso
+        // solo sirve un teléfono a la vez por USB (rompe el túnel del otro al
+        // desconectarlo). Para probar dos teléfonos reales al mismo tiempo, ambos en la
+        // misma Wi-Fi que esta máquina, pasar `-PCHECKIN_EMULATOR_HOST=<IP de la Mac>`.
+        // Declarado en defaultConfig (no solo en debug) para que compile en release también,
+        // aunque ahí nunca se lea.
+        buildConfigField("String", "EMULATOR_HOST", "\"${gradleProp("CHECKIN_EMULATOR_HOST") ?: "127.0.0.1"}\"")
     }
 
     if (hasReleaseSigning) {
@@ -75,11 +84,6 @@ android {
             // `-PCHECKIN_USE_EMULATORS=false` — sigue siendo un APK debug-signed, se instala
             // igual con `adb install`/`installDebug`, pero habla con Firebase real.
             buildConfigField("boolean", "USE_EMULATORS", (gradleProp("CHECKIN_USE_EMULATORS") ?: "true"))
-            // Host de los emuladores: "127.0.0.1" (con `adb reverse`) de forma normal, pero
-            // eso solo sirve un teléfono a la vez por USB (rompe el túnel del otro al
-            // desconectarlo). Para probar dos teléfonos reales al mismo tiempo, ambos en la
-            // misma Wi-Fi que esta máquina, pasar `-PCHECKIN_EMULATOR_HOST=<IP de la Mac>`.
-            buildConfigField("String", "EMULATOR_HOST", "\"${gradleProp("CHECKIN_EMULATOR_HOST") ?: "127.0.0.1"}\"")
         }
         release {
             isMinifyEnabled = true
