@@ -1,0 +1,215 @@
+{
+  "description": "Contract test vectors for slot rules (docs/03 §2). Times are local wall-clock in settings.timezone. 2026-09-21 is a Monday. Both firebase/functions and android tests MUST load this file. In 'assign', expectedStatus is evaluated at now = clientAt + 1 minute. Status order: on_time/late (assigned check-in with clientAt <= now) > upcoming > pending > missed. Reference implementation: docs/reference/schedule_reference.py",
+  "baseSettings": {
+    "enabled": true,
+    "intervalMinutes": 10,
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "startTime": "07:00",
+    "endTime": "13:00",
+    "escalationMinutes": 5,
+    "nudgeMinutes": 3,
+    "timezone": "America/Caracas"
+  },
+  "nextSlot": [
+    {
+      "id": "V1",
+      "now": "2026-09-21T06:55:00",
+      "expected": "2026-09-21T07:00:00"
+    },
+    {
+      "id": "V2",
+      "now": "2026-09-21T07:00:00",
+      "expected": "2026-09-21T07:10:00"
+    },
+    {
+      "id": "V3",
+      "now": "2026-09-21T12:55:00",
+      "expected": "2026-09-22T07:00:00"
+    },
+    {
+      "id": "V4",
+      "now": "2026-09-25T13:30:00",
+      "expected": "2026-09-28T07:00:00"
+    },
+    {
+      "id": "V5",
+      "now": "2026-09-26T09:00:00",
+      "expected": "2026-09-28T07:00:00"
+    },
+    {
+      "id": "V6",
+      "now": "2026-09-21T06:55:00",
+      "settings": {
+        "enabled": false
+      },
+      "expected": null
+    }
+  ],
+  "assign": [
+    {
+      "id": "V7",
+      "clientAt": "2026-09-21T07:04:00",
+      "expectedSlot": "07:00",
+      "expectedStatus": "on_time"
+    },
+    {
+      "id": "V8",
+      "clientAt": "2026-09-21T06:57:00",
+      "expectedSlot": "07:00",
+      "expectedStatus": "on_time"
+    },
+    {
+      "id": "V9",
+      "clientAt": "2026-09-21T06:54:00",
+      "expectedSlot": null
+    },
+    {
+      "id": "V10",
+      "clientAt": "2026-09-21T07:05:00",
+      "expectedSlot": "07:00",
+      "expectedStatus": "on_time"
+    },
+    {
+      "id": "V11",
+      "clientAt": "2026-09-21T07:07:00",
+      "expectedSlot": "07:10",
+      "expectedStatus": "on_time"
+    },
+    {
+      "id": "V12",
+      "clientAt": "2026-09-21T12:58:00",
+      "expectedSlot": null
+    },
+    {
+      "id": "V15",
+      "clientAt": "2026-09-21T07:12:00",
+      "settings": {
+        "intervalMinutes": 30
+      },
+      "expectedSlot": "07:00",
+      "expectedStatus": "late"
+    },
+    {
+      "id": "V16",
+      "clientAt": "2026-09-21T07:15:00",
+      "settings": {
+        "intervalMinutes": 30
+      },
+      "expectedSlot": "07:00",
+      "expectedStatus": "late"
+    },
+    {
+      "id": "V17",
+      "clientAt": "2026-09-21T07:16:00",
+      "settings": {
+        "intervalMinutes": 30
+      },
+      "expectedSlot": "07:30",
+      "expectedStatus": "on_time"
+    }
+  ],
+  "slotStatus": [
+    {
+      "id": "V13",
+      "slot": "07:00",
+      "date": "2026-09-21",
+      "now": "2026-09-21T07:04:00",
+      "checkins": [],
+      "expectedStatus": "pending"
+    },
+    {
+      "id": "V14",
+      "slot": "07:00",
+      "date": "2026-09-21",
+      "now": "2026-09-21T07:05:00",
+      "checkins": [],
+      "expectedStatus": "missed"
+    },
+    {
+      "id": "V11b",
+      "slot": "07:00",
+      "date": "2026-09-21",
+      "now": "2026-09-21T07:08:00",
+      "checkins": [
+        {
+          "clientAt": "2026-09-21T07:07:00",
+          "createdAt": "2026-09-21T07:07:01"
+        }
+      ],
+      "expectedStatus": "missed"
+    },
+    {
+      "id": "V18",
+      "slot": "07:00",
+      "date": "2026-09-21",
+      "now": "2026-09-21T07:41:00",
+      "checkins": [
+        {
+          "clientAt": "2026-09-21T07:03:00",
+          "createdAt": "2026-09-21T07:40:00"
+        }
+      ],
+      "expectedStatus": "on_time",
+      "expectedSyncedLate": true
+    }
+  ],
+  "recompute": [
+    {
+      "id": "V19",
+      "date": "2026-09-21",
+      "steps": [
+        {
+          "now": "2026-09-21T07:20:00",
+          "checkins": [],
+          "expect": {
+            "07:00": "missed",
+            "07:10": "missed",
+            "07:20": "pending"
+          }
+        },
+        {
+          "now": "2026-09-21T07:41:00",
+          "checkins": [
+            {
+              "clientAt": "2026-09-21T07:03:00",
+              "createdAt": "2026-09-21T07:40:00"
+            }
+          ],
+          "expect": {
+            "07:00": "on_time"
+          },
+          "expectSyncedLate": [
+            "07:00"
+          ]
+        }
+      ]
+    }
+  ],
+  "slotsFor": [
+    {
+      "id": "V20",
+      "date": "2026-09-21",
+      "settings": {
+        "endTime": "07:25"
+      },
+      "expected": [
+        "07:00",
+        "07:10",
+        "07:20"
+      ]
+    },
+    {
+      "id": "V20b",
+      "date": "2026-09-21",
+      "expectedCount": 36,
+      "expectedFirst": "07:00",
+      "expectedLast": "12:50"
+    }
+  ]
+}
