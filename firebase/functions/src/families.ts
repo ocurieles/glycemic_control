@@ -22,6 +22,16 @@ export const DEFAULT_SETTINGS: ReminderSettings = {
   childPhone: null,
 };
 
+/**
+ * Reconstruye settings completos aunque el documento tenga campos faltantes o esté
+ * vacío (p. ej. una familia recién creada por tests, o un campo agregado después).
+ * `?? DEFAULT_SETTINGS` por sí solo NO alcanza: solo cubre `null`/`undefined`, no un
+ * objeto parcial como `{}`.
+ */
+export function resolveSettings(familySettings: Partial<ReminderSettings> | undefined | null): ReminderSettings {
+  return { ...DEFAULT_SETTINGS, ...(familySettings ?? {}) };
+}
+
 const PAIRING_CODE_TTL_MS = 30 * 60 * 1000;
 const JOIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
 const JOIN_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;

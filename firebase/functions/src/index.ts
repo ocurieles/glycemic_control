@@ -8,3 +8,4 @@ export { createFamily, createPairingCode, joinFamily, leaveFamily } from "./fami
 export { onEventCreated } from "./events";
 export { onFamilyUpdated } from "./settings";
 export { removeLibreLinkUp, setLibreLinkUp, testLibreLinkUp } from "./libre";
+export { checkMissedSlots } from "./missed";

@@ -75,3 +75,32 @@ export function formatMissedMessage(childName: string, slotHhmm: string): { titl
     body: `Recordatorio de las ${slotHhmm} (puede estar sin conexión)`,
   };
 }
+
+/** Ráfaga de `checkin_late` agrupada (docs/07 "Qué ven los padres"). */
+export function formatGroupedLateMessage(
+  childName: string,
+  count: number,
+  fromMs: number,
+  toMs: number,
+  timezone = DEFAULT_TIMEZONE,
+): { title: string; body: string } {
+  const from = formatTime(fromMs, timezone);
+  const to = formatTime(toMs, timezone);
+  return {
+    title: `${childName} sincronizó ${count} revisiones`,
+    body: `Hechas sin conexión (${from}–${to})`,
+  };
+}
+
+/** Resumen del día al terminar el horario (docs/04 "checkMissedSlots"). */
+export function formatDaySummaryMessage(counts: {
+  expected: number;
+  onTime: number;
+  late: number;
+  missed: number;
+}): { title: string; body: string } {
+  return {
+    title: "Resumen del día",
+    body: `Hoy: ${counts.onTime}/${counts.expected} a tiempo, ${counts.late} tarde, ${counts.missed} sin respuesta`,
+  };
+}

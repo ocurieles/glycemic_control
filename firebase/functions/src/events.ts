@@ -1,8 +1,13 @@
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions";
+import { resolveSettings } from "./families";
 import { sendToChild, sendToParents } from "./messaging";
 import { formatCheckinMessage, formatSosMessage } from "./messages";
+import { registerLateCheckin } from "./pushBuffer";
+import { recomputeDay } from "./recompute";
+import { dateKeyOf } from "./time";
+import { ReminderSettings } from "./schedule";
 
 /**
  * `onEventCreated` (docs/04). Idempotente por `processedAt`. NO consulta LibreLinkUp
@@ -47,8 +52,21 @@ export const onEventCreated = onDocumentCreated("families/{familyId}/events/{eve
       await db.doc(`families/${familyId}`).update({
         lastCheckinAt: Timestamp.fromMillis(Math.max(family.lastCheckinAt?.toMillis?.() ?? 0, realAtMs)),
       });
-      const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate });
-      await sendToParents(familyId, syncedLate ? "checkin_late" : "checkin", { title, body, eventId });
+
+      const settings = resolveSettings(family.settings as Partial<ReminderSettings> | undefined);
+
+      if (syncedLate) {
+        const sendNow = await registerLateCheckin(familyId, eventId, realAtMs);
+        if (sendNow) {
+          const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate, createdAtMs: createdAt });
+          await sendToParents(familyId, "checkin_late", { title, body, eventId });
+        }
+      } else {
+        const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate });
+        await sendToParents(familyId, "checkin", { title, body, eventId });
+      }
+
+      await recomputeDay(familyId, dateKeyOf(realAtMs, settings.timezone), settings);
       break;
     }
     case "sos": {
