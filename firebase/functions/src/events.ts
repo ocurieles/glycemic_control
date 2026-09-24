@@ -65,11 +65,18 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       if (syncedLate) {
         const sendNow = await registerLateCheckin(familyId, eventId, realAtMs);
         if (sendNow) {
-          const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate, createdAtMs: createdAt, glucose });
+          const { title, body } = formatCheckinMessage({
+            childName,
+            realAtMs,
+            syncedLate,
+            createdAtMs: createdAt,
+            glucose,
+            glucoseError,
+          });
           await sendToParents(familyId, "checkin_late", { title, body, eventId });
         }
       } else {
-        const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate, glucose });
+        const { title, body } = formatCheckinMessage({ childName, realAtMs, syncedLate, glucose, glucoseError });
         await sendToParents(familyId, "checkin", { title, body, eventId });
       }
 

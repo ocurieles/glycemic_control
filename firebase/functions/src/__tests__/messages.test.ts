@@ -42,6 +42,27 @@ describe("messages.ts — textos exactos de docs/04", () => {
     expect(body).toBe("10:40 a. m. · 62 mg/dL ↘");
   });
 
+  it("checkin sin glucosa por lectura vieja (glucoseError: stale) lo dice explícitamente", () => {
+    const { title, body } = formatCheckinMessage({
+      childName: "Cesar",
+      realAtMs: at("10:40"),
+      syncedLate: false,
+      glucoseError: "stale",
+    });
+    expect(title).toBe("Cesar se revisó ✓");
+    expect(body).toBe("10:40 a. m. · Sin lectura reciente del sensor");
+  });
+
+  it("checkin sin glucosa por otro motivo (p. ej. not_configured) no lo anuncia", () => {
+    const { body } = formatCheckinMessage({
+      childName: "Cesar",
+      realAtMs: at("10:40"),
+      syncedLate: false,
+      glucoseError: "not_configured",
+    });
+    expect(body).toBe("10:40 a. m.");
+  });
+
   it("checkin_late (sincronizado tarde)", () => {
     const { title, body } = formatCheckinMessage({
       childName: "Cesar",

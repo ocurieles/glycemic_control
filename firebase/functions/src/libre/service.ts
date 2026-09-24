@@ -23,7 +23,11 @@ import { ReminderSettings } from "../schedule";
  */
 
 const SESSION_REUSE_MARGIN_MS = 5 * 60_000;
-const STALE_VS_CLIENT_AT_MS = 15 * 60_000;
+// Vigencia máxima de una lectura respecto al momento de la revisión (docs/05): si el
+// sensor no se sincronizó hace más de esto, es mejor decir "sin lectura reciente" que
+// mostrar un valor viejo que ya no refleja la glucosa real (pedido explícito del
+// usuario tras la prueba de campo del 2026-09-24; antes eran 15 min).
+const STALE_VS_CLIENT_AT_MS = 5 * 60_000;
 const GRAPH_MATCH_WINDOW_MS = 10 * 60_000;
 
 export type LibreLookupErrorCode = LibreErrorCode | "no_data" | "stale" | "not_configured";

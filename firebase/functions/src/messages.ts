@@ -31,12 +31,20 @@ interface CheckinMessageInput {
   createdAtMs?: number;
   timezone?: string;
   glucose?: GlucoseInfo;
+  /** Motivo de no tener `glucose` (docs/05). Solo "stale" se anuncia: los demás son
+   * estados conocidos (LibreLinkUp no conectado, sin datos, error de red) que no hace
+   * falta remarcar en cada push. */
+  glucoseError?: string;
 }
 
 export function formatCheckinMessage(input: CheckinMessageInput): { title: string; body: string } {
-  const { childName, realAtMs, syncedLate, createdAtMs, timezone, glucose } = input;
+  const { childName, realAtMs, syncedLate, createdAtMs, timezone, glucose, glucoseError } = input;
   const time = formatTime(realAtMs, timezone);
-  const valueSuffix = glucose ? ` · ${glucose.valueMgDl} mg/dL ${TREND_ARROWS[glucose.trend ?? 3] ?? ""}` : "";
+  const valueSuffix = glucose
+    ? ` · ${glucose.valueMgDl} mg/dL ${TREND_ARROWS[glucose.trend ?? 3] ?? ""}`
+    : glucoseError === "stale"
+      ? " · Sin lectura reciente del sensor"
+      : "";
 
   if (syncedLate) {
     const syncedAt = createdAtMs !== undefined ? formatTime(createdAtMs, timezone) : "";

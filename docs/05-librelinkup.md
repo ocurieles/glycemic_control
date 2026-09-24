@@ -56,7 +56,8 @@ sequenceDiagram
 - **Frecuencia:** consultar solo por evento (revisión o SOS), nunca por polling. Si llegan varias revisiones en menos de 60 s (por ejemplo, una ráfaga al sincronizar), se reutiliza la respuesta de conexiones cacheada en memoria de la instancia o se usa una sola consulta a `graph` para todo el lote.
 
 ## Validación de la lectura
-- Se descarta si `readingAt` es más viejo que 15 min respecto a `clientAt` (`stale`). El sensor actualiza cada minuto, pero LibreLinkUp puede atrasarse si el teléfono del niño no tiene internet. **Es muy probable que coincida con las revisiones sin conexión**, y por eso existe el historial.
+- Se descarta si `readingAt` es más viejo que **5 min** respecto a `clientAt` (`stale`; antes eran 15 min — se bajó a pedido explícito del usuario tras la prueba de campo del 2026-09-24: prefiere que el push diga "sin lectura reciente" a mostrar un valor que ya no refleja la glucosa real). El sensor actualiza cada minuto, pero LibreLinkUp puede atrasarse si el teléfono del niño no tiene internet. **Es muy probable que coincida con las revisiones sin conexión**, y por eso existe el historial.
+- Cuando pasa esto en una revisión normal (no atrasada), el push a los padres lo dice explícitamente: `"Cesar se revisó ✓ · 10:40 a. m. · Sin lectura reciente del sensor"`, en vez de omitir el valor en silencio (`messages.ts` → `formatCheckinMessage`, campo `glucoseError`).
 - `level`: `low` si el valor es menor a `lowThreshold`, `high` si es mayor a `highThreshold`, y `normal` en otro caso.
 
 ## Cifrado (`libre/crypto.ts`)
