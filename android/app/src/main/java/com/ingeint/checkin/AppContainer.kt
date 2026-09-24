@@ -10,7 +10,10 @@ import com.ingeint.checkin.data.local.Prefs
 import com.ingeint.checkin.data.remote.FunctionsApi
 
 private const val FUNCTIONS_REGION = "us-east1" // docs/02 D3
-private const val EMULATOR_HOST = "10.0.2.2" // docs/06: host del emulador Android hacia el host
+// "127.0.0.1" + `adb reverse` funciona tanto en un teléfono real por USB como en el
+// emulador de Android Studio (ver docs/06 y CLAUDE.md → Comandos). "10.0.2.2" solo
+// funciona en el emulador y por eso NO se usa aquí.
+private const val EMULATOR_HOST = "127.0.0.1"
 
 /**
  * DI manual (docs/06 "DI manual: un AppContainer en CheckinApp. No se usa Hilt").

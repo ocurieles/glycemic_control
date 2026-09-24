@@ -127,8 +127,10 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
                 if (auth.currentUser == null) auth.signInAnonymously().await()
                 block(auth)
             } catch (e: FunctionsCallError) {
+                android.util.Log.e("SetupViewModel", "callable falló: ${e.code}", e)
                 _state.update { it.copy(loading = false, errorMessage = friendlyError(e)) }
             } catch (e: Exception) {
+                android.util.Log.e("SetupViewModel", "fallo inesperado en runAuthenticated", e)
                 _state.update { it.copy(loading = false, errorMessage = "Algo salió mal. Intenta de nuevo.") }
             }
         }

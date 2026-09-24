@@ -48,7 +48,12 @@ cd android
 adb shell dumpsys alarm | grep com.ingeint.checkin     # ver alarmas programadas
 adb shell cmd deviceidle force-idle                    # probar Doze
 ```
-En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS`; host `10.0.2.2`).
+En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS`; host `127.0.0.1`). En un **teléfono real** por USB (no en el emulador de Android Studio) hace falta además:
+```bash
+adb reverse tcp:9099 tcp:9099   # Auth
+adb reverse tcp:8080 tcp:8080   # Firestore
+adb reverse tcp:5001 tcp:5001   # Functions
+```
 
 ## Convenciones
 - Kotlin: paquetes `data.local`, `data.remote`, `reminders`, `sync`, `notify`, `push`, `ui.*`. Corrutinas + Flow. DI manual (`AppContainer`). Nada de lógica en Composables: ViewModels por pantalla.
@@ -63,14 +68,16 @@ En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS
   - **F0/F1**: repo git, backend Functions v2 desplegado en el proyecto real `checkin-familia` (us-east1), Auth anónima + Firestore habilitados, `google-services.json` en `android/app/`.
   - **F1 fix post-deploy**: `joinFamily` pedía `displayName` también al niño y sobrescribía `families.childName`; ahora es obligatorio solo para `role: "parent"` y el niño hereda el `childName` ya existente (docs/04 corregido, función redesplegada).
   - **F2**: proyecto Android completo en `android/` (Kotlin + Compose M3, `minSdk 26`, paquete `com.ingeint.checkin`, nombre "Check-in"):
-    - `CheckinApp` + `AppContainer` (DI manual): Auth anónima persistente, Firestore/Functions(`us-east1`)/Messaging, apuntando a los emuladores en debug (`BuildConfig.USE_EMULATORS`, host `10.2.0.2`/`10.0.2.2`).
+    - `CheckinApp` + `AppContainer` (DI manual): Auth anónima persistente, Firestore/Functions(`us-east1`)/Messaging, apuntando a los emuladores en debug (`BuildConfig.USE_EMULATORS`, host `127.0.0.1` + `adb reverse` — funciona igual en emulador y en teléfono real).
+    - `src/debug/res/xml/network_security_config.xml`: permite HTTP sin cifrar hacia `127.0.0.1`/`10.0.2.2`/`localhost` **solo en debug** (si no, Android bloquea la conexión a los emuladores de Firebase con "Cleartext HTTP traffic ... not permitted").
     - `SetupScreen` completo: elegir rol → crear familia / unirse con código (padre) o solo código (niño) → `getIdToken(true)` tras vincular → guarda rol/familia/settings en DataStore (`Prefs`) → registra canales.
     - `Channels`: `child_reminder`/`child_message` (sin sonido, `VISIBILITY_PRIVATE`), `parent_checkin`/`parent_alert`/`parent_sos` (con alarma, bypassa DND), `sync_status`; se crean solo para el rol activo.
     - `Haptics` con los 5 patrones de docs/01 y `USAGE_ALARM`.
     - `PushService` (`FirebaseMessagingService`): switch por `type` de docs/04; `sync` ya refresca settings cacheados; el resto son handlers mínimos con `TODO(F3/F5)`.
     - `PermissionsWizardScreen` (rol-dependiente) y `DiagnosticsScreen` (checklist de permisos, modo de timbre, practicar cada vibración).
-    - Tests: `ChildStringsForbiddenWordsTest` (JVM, ignora comentarios XML) y `ChildChannelsInstrumentedTest` (androidTest, compila OK; **no se corrió** — necesita emulador/dispositivo Android, no disponible en esta máquina de desarrollo todavía).
-  - `./gradlew assembleDebug testDebugUnitTest lint` — **todo en verde**.
+    - Tests: `ChildStringsForbiddenWordsTest` (JVM) y `ChildChannelsInstrumentedTest` (androidTest).
+  - `./gradlew assembleDebug testDebugUnitTest connectedDebugAndroidTest lint` — **todo en verde**, `connectedDebugAndroidTest` corrido en un teléfono real (WP53 Pro, Android 16/API 36; ver "verificado en dispositivo real" abajo).
+  - **Verificado en dispositivo real** (el teléfono de Cesar, con LibreLink instalado, contra los emuladores de Firebase — no contra producción): rol padre completo de punta a punta — crear familia → código de vinculación real (`createFamily` procesado por el emulador de Functions) → asistente de permisos → pantalla de inicio. Se limpiaron los datos de prueba de la app al terminar (`pm clear`) para no dejar el teléfono en un estado de prueba.
 - Decisiones tomadas durante la implementación:
   - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta).
   - Runtime de Cloud Functions: **`nodejs22`**. Se agregó `luxon` al backend para manejo de timezone con DST real.
@@ -79,8 +86,7 @@ En debug, la app apunta a los emuladores de Firebase (`BuildConfig.USE_EMULATORS
   - Requiere JDK ≥ 21 para los emuladores de Firebase (Gradle usa JDK 17 aparte, sin conflicto).
   - **AGP 9.4.1 + `compileSdk/targetSdk 37`**, sin el plugin `org.jetbrains.kotlin.android` (AGP 9+ trae Kotlin integrado, ver `kotl.in/gradle/agp-built-in-kotlin`). Se intentó primero con AGP 8.13.2 (más conservador, como con TypeScript), pero las versiones "última estable" de Compose/Lifecycle/Core de sept. 2026 ya exigen API 37 y AGP 9.1+, así que downgradear esas librerías habría sido una persecución sin fin. Requirió instalar `platforms;android-37.2` + `build-tools;37.0.0` vía `cmdline-tools`/`sdkmanager` y regenerar el wrapper con **Gradle 9.7.1** (AGP 8.x deja de funcionar desde Gradle 9.6+).
 - Pendiente / riesgos abiertos:
-  - **Correr `./gradlew connectedDebugAndroidTest` en un emulador/dispositivo real** (verifica que los canales `child_*` no tengan sonido) — no se pudo ejecutar en esta sesión por falta de un AVD/dispositivo conectado.
-  - Probar de extremo a extremo la vinculación contra los emuladores de Firebase (`firebase emulators:start` + la app en modo debug): un padre crea la familia, el niño se une con el código, y un push de prueba llega al rol correcto — pendiente de hacer con un dispositivo/emulador.
+  - Falta probar el flujo del **niño** de extremo a extremo (unirse con el código de un padre) y el envío de un push de prueba al rol correcto — solo se probó el lado del padre en esta sesión.
   - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
   - Confirmar los headers actuales de LibreLinkUp antes de F7.
   - `PushService.onNewToken` genera un warning del compilador ("overrides a deprecated member"); revisar si el SDK de Firebase Messaging 34.19.0 ya tiene un reemplazo antes de F5.
