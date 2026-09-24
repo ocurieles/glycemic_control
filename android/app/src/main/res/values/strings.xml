@@ -26,7 +26,62 @@
     <string name="setup_pairing_code_expires">Válido por 30 minutos</string>
     <string name="setup_generic_error">Algo salió mal. Intenta de nuevo.</string>
 
-    <string name="parent_home_placeholder_title">¡Listo, %1$s!</string>
-    <string name="parent_home_placeholder_body">Estás vinculado a la familia de %1$s. El resto de la app (recordatorios, cumplimiento, mensajes) llega en las próximas fases.</string>
     <string name="settings_icon_description">Ajustes</string>
+
+    <!-- ParentHomeScreen (docs/06 "Padres — Inicio") -->
+    <string name="parent_banner_sos_title">🆘 %1$s necesita ayuda</string>
+    <string name="parent_banner_sos_going">Voy en camino</string>
+    <string name="parent_banner_sos_call">Llamar a %1$s</string>
+    <string name="parent_banner_sos_location">Ver ubicación</string>
+
+    <string name="parent_compliance_title">Cumplimiento de hoy</string>
+    <string name="parent_compliance_missing">Todavía no hay datos de cumplimiento (llega en la próxima fase).</string>
+    <string name="parent_compliance_counts">%1$d a tiempo · %2$d tarde · %3$d sin respuesta · %4$d pendientes · %5$d próximos</string>
+
+    <string name="parent_quick_messages_title">Mensajes rápidos</string>
+    <string name="parent_quick_message_reminder">Recuerda la lectura</string>
+    <string name="parent_quick_message_ok">¿Todo bien?</string>
+    <string name="parent_quick_message_going">Voy en camino</string>
+    <string name="parent_quick_message_hint">Escribe un mensaje</string>
+    <string name="parent_quick_message_send">Enviar</string>
+
+    <string name="parent_timeline_title">Línea de tiempo</string>
+    <string name="parent_timeline_empty">Sin eventos todavía</string>
+    <string name="parent_timeline_synced_late"> (sincronizado después)</string>
+    <string name="parent_event_checkin">Revisión</string>
+    <string name="parent_event_sos">SOS</string>
+    <string name="parent_event_parent_message">Mensaje</string>
+    <string name="parent_event_sos_ack">Respuesta</string>
+
+    <string name="parent_settings_title">Ajustes</string>
+    <string name="parent_settings_schedule_title">Horario</string>
+    <string name="parent_settings_interval">Intervalo (minutos)</string>
+    <string name="parent_settings_start_time">Hora de inicio (HH:mm)</string>
+    <string name="parent_settings_end_time">Hora de fin (HH:mm)</string>
+    <string name="parent_settings_escalation">Minutos de escalamiento</string>
+    <string name="parent_settings_nudge">Minutos de refuerzo</string>
+    <string name="parent_settings_enabled">Recordatorios activos</string>
+    <string name="parent_settings_thresholds_title">Umbrales de glucosa</string>
+    <string name="parent_settings_low_threshold">Umbral bajo (mg/dL)</string>
+    <string name="parent_settings_high_threshold">Umbral alto (mg/dL)</string>
+    <string name="parent_settings_sos_title">SOS sin conexión</string>
+    <string name="parent_settings_sms_enabled">Enviar SMS de respaldo</string>
+    <string name="parent_settings_sms_numbers">Números para el SMS (separados por coma)</string>
+    <string name="parent_settings_child_phone">Teléfono de %1$s (para llamarlo)</string>
+    <string name="parent_settings_save">Guardar</string>
+    <string name="parent_settings_libre_title">LibreLinkUp</string>
+    <string name="parent_settings_libre_email">Correo</string>
+    <string name="parent_settings_libre_password">Clave</string>
+    <string name="parent_settings_libre_connect">Conectar</string>
+    <string name="parent_settings_libre_test">Probar lectura</string>
+    <string name="parent_settings_family_title">Familia</string>
+    <string name="parent_settings_generate_code">Generar código de vinculación</string>
+    <string name="parent_settings_leave_family">Desvincular este teléfono</string>
+    <string name="parent_settings_day_mon">L</string>
+    <string name="parent_settings_day_tue">M</string>
+    <string name="parent_settings_day_wed">X</string>
+    <string name="parent_settings_day_thu">J</string>
+    <string name="parent_settings_day_fri">V</string>
+    <string name="parent_settings_day_sat">S</string>
+    <string name="parent_settings_day_sun">D</string>
 </resources>

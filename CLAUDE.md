@@ -63,7 +63,7 @@ adb reverse tcp:5001 tcp:5001   # Functions
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F4 cerrada (outbox, sincronización y SOS). Siguiente: F5 (app de padres).
+- Fase actual: F5 cerrada (app de padres). Siguiente: F6 (cumplimiento y escalamiento, backend).
 - Hecho:
   - **F0/F1**: repo git, backend Functions v2 desplegado en el proyecto real `checkin-familia` (us-east1), Auth anónima + Firestore habilitados, `google-services.json` en `android/app/`.
   - **F1 fix post-deploy**: `joinFamily` pedía `displayName` también al niño y sobrescribía `families.childName`; ahora es obligatorio solo para `role: "parent"` y el niño hereda el `childName` ya existente (docs/04 corregido, función redesplegada).
@@ -92,6 +92,13 @@ adb reverse tcp:5001 tcp:5001   # Functions
     - SOS: `LocationHelper` (ubicación con timeout de 5 s, nunca bloquea), `SmsFallback` (SMS de respaldo cuando no hay red validada y `smsFallbackEnabled`, con el texto exacto de docs/07).
     - `Prefs.correctedNowMillis()`: `clientAt` ya corregido con el offset de reloj conocido.
     - Tests: `SyncWorkerPayloadTest` (JVM, el mapeo exacto de `OutboxEvent` al payload de Firestore) y `OutboxRepositoryInstrumentedTest` (androidTest, Room real en memoria: debounce, SOS nunca se debouncea, `hasCheckinForSlot`) — los 8 tests instrumentados (3 de F2 + 5 nuevos) corridos en un emulador Android real, todos en verde.
+  - **F5**: backend — 3 callables stub de LibreLinkUp (`setLibreLinkUp`/`testLibreLinkUp`/`removeLibreLinkUp`, `HttpsError('unimplemented', ...)`, docs/08 F5: "pueden devolver not-implemented hasta F7"), desplegados. App:
+    - `ParentNotifier`: `notifyCheckin`/`notifyAlert` (canales `parent_checkin`/`parent_alert`) y `notifySos` (pantalla completa, bypassa DND, acciones "Voy en camino" y "Ver ubicación" con intent `geo:`).
+    - `ParentActionReceiver`: acción "Voy en camino" de la notificación de SOS → registra `sos_ack` en el outbox.
+    - `PushService`: ya construye las notificaciones reales de padres (`checkin`/`checkin_late`/`missed`/`sos`/`sos_glucose`/`sos_ack_info`/`day_summary`) y del niño (`parent_message` vibra `MESSAGE` + `ChildNotifier.showMessage`; `sos_ack` vibra `SEEN`).
+    - `ParentHomeScreen`/`ParentViewModel`: banner de SOS activo (últimos 60 min sin `sos_ack`, con "Voy en camino" y "Llamar a Cesar"), cumplimiento de hoy desde `days/{fecha}` (con mensaje neutro si el doc no existe todavía — F6 lo escribe), mensajes rápidos (outbox), línea de tiempo en tiempo real (listener de Firestore).
+    - `ParentSettingsScreen`/`ParentSettingsViewModel`: horario completo (intervalo, días, horas, escalamiento, refuerzo), umbrales, SOS por SMS, teléfono del niño, sección LibreLinkUp (conecta con los stubs), generar código de vinculación, desvincular. Validación de rangos espejo de `validSettings()` (docs/03 §1), escritura directa a Firestore (sin callable, como marcan las reglas).
+  - **Verificado en el emulador (F5), de punta a punta y en tiempo real**: crear familia → enviar un mensaje rápido → aparece **al instante** en la línea de tiempo (outbox → `SyncWorker` → Firestore → `onEventCreated` → listener); Ajustes → "Probar lectura" muestra "La integración con LibreLinkUp llega en F7."; "Generar código" trae un código nuevo real; "Guardar" persiste los settings validados contra las reglas de Firestore.
 - Decisiones tomadas durante la implementación:
   - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta).
   - Runtime de Cloud Functions: **`nodejs22`**. Se agregó `luxon` al backend para manejo de timezone con DST real.
@@ -107,5 +114,8 @@ adb reverse tcp:5001 tcp:5001   # Functions
   - `SmsFallback`/`LocationHelper` no se probaron con un SOS real (necesitan permisos de ubicación/SMS otorgados y, para el SMS, señal celular real, no disponible en el emulador).
   - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
   - Confirmar los headers actuales de LibreLinkUp antes de F7.
+  - **F5**: no se probó con dos dispositivos a la vez el ciclo completo que pide docs/08 ("el niño se revisa, el padre recibe el push, el padre manda un mensaje y el niño vibra, el niño envía SOS, el padre responde y el niño vibra SEEN") — se probó el lado del padre (mensajes, ajustes, código) de punta a punta, pero no la recepción real en un segundo teléfono/emulador como niño, ni el push de FCM en sí (solo el trigger de Firestore).
+  - `ParentHomeScreen`: el chip "Voy en camino" de mensajes rápidos se ve angosto en pantallas pequeñas (problema de layout, no funcional); pendiente de pulir.
+  - El botón "Llamar a Cesar" y el banner de ubicación del SOS no se probaron (falta un SOS real con `lat`/`lng`, que a su vez depende de que el niño lo envíe).
   - `PushService.onNewToken` genera un warning del compilador ("overrides a deprecated member"); revisar si el SDK de Firebase Messaging 34.19.0 ya tiene un reemplazo antes de F5.
   - Actualizar `docs/10-despliegue.md` para mencionar JDK ≥ 21 (emuladores) y `compileSdk 37`/`platforms;android-37.2` como requisito del SDK de Android.

@@ -57,6 +57,9 @@
              explícito (AlarmManager), no necesita intent-filter. -->
         <receiver android:name=".reminders.ReminderReceiver" android:exported="false" />
 
+        <!-- Acción "Voy en camino" de la notificación de SOS (docs/01 H5). -->
+        <receiver android:name=".push.ParentActionReceiver" android:exported="false" />
+
         <receiver android:name=".reminders.BootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -11,6 +11,7 @@ import com.ingeint.checkin.R
 import com.ingeint.checkin.reminders.ReminderReceiver
 
 private const val REMINDER_NOTIFICATION_ID = 2001
+private const val MESSAGE_NOTIFICATION_ID = 2002
 
 /**
  * Construye las notificaciones del rol niño (docs/06 "Notificaciones del niño").
@@ -56,5 +57,28 @@ object ChildNotifier {
 
     fun cancelReminder(context: Context) {
         context.getSystemService<NotificationManager>()?.cancel(REMINDER_NOTIFICATION_ID)
+    }
+
+    /** Mensaje de un padre (docs/06 H6): título neutro, texto solo con el teléfono desbloqueado. */
+    fun showMessage(context: Context, text: String) {
+        val publicVersion =
+            NotificationCompat.Builder(context, ChannelIds.CHILD_MESSAGE)
+                .setSmallIcon(android.R.drawable.ic_dialog_email)
+                .setContentTitle(context.getString(R.string.notification_message_title))
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .build()
+
+        val notification =
+            NotificationCompat.Builder(context, ChannelIds.CHILD_MESSAGE)
+                .setSmallIcon(android.R.drawable.ic_dialog_email)
+                .setContentTitle(context.getString(R.string.notification_message_title))
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(publicVersion)
+                .setAutoCancel(true)
+                .build()
+
+        context.getSystemService<NotificationManager>()?.notify(MESSAGE_NOTIFICATION_ID, notification)
     }
 }

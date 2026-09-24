@@ -7,6 +7,7 @@ import com.ingeint.checkin.CheckinApp
 import com.ingeint.checkin.data.model.ReminderSettings
 import com.ingeint.checkin.notify.ChildNotifier
 import com.ingeint.checkin.notify.Haptics
+import com.ingeint.checkin.notify.ParentNotifier
 import com.ingeint.checkin.notify.VibrationPattern
 import com.ingeint.checkin.reminders.ReminderScheduler
 import com.ingeint.checkin.reminders.ReminderTime
@@ -77,18 +78,63 @@ class PushService : FirebaseMessagingService() {
                 "parent_message" -> {
                     val at = data["at"]?.toLongOrNull() ?: System.currentTimeMillis()
                     app.container.prefs.saveLastMessage(data["text"].orEmpty(), data["from"].orEmpty(), at)
-                    // TODO(F5): ChildNotifier — vibración MESSAGE + notificación "Mensaje".
+                    Haptics.vibrate(this@PushService, VibrationPattern.MESSAGE)
+                    ChildNotifier.showMessage(this@PushService, data["text"].orEmpty())
                 }
                 "sos_ack" -> {
                     val at = data["at"]?.toLongOrNull() ?: System.currentTimeMillis()
                     app.container.prefs.saveLastSosAckAt(at)
-                    // TODO(F5): ChildNotifier — vibración SEEN + notificación.
+                    Haptics.vibrate(this@PushService, VibrationPattern.SEEN)
+                    ChildNotifier.showMessage(this@PushService, data["text"].orEmpty())
                 }
                 // --- Padres ---
-                "checkin", "checkin_late", "missed", "sos", "sos_glucose", "sos_ack_info", "day_summary" -> {
-                    // TODO(F5): ParentNotifier construye la notificación según docs/04/docs/06.
-                    Log.d(TAG, "push de padres type=${data["type"]}")
-                }
+                "checkin" ->
+                    ParentNotifier.notifyCheckin(
+                        this@PushService,
+                        data["eventId"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                        alert = data["level"] != null && data["level"] != "normal",
+                    )
+                "checkin_late" ->
+                    ParentNotifier.notifyCheckin(
+                        this@PushService,
+                        data["eventId"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                        alert = false,
+                    )
+                "missed" ->
+                    ParentNotifier.notifyAlert(
+                        this@PushService,
+                        data["slot"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                    )
+                "sos" ->
+                    ParentNotifier.notifySos(
+                        this@PushService,
+                        data["eventId"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                        data["lat"]?.toDoubleOrNull(),
+                        data["lng"]?.toDoubleOrNull(),
+                    )
+                "sos_glucose", "sos_ack_info" ->
+                    ParentNotifier.notifyAlert(
+                        this@PushService,
+                        data["eventId"] ?: data["type"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                    )
+                "day_summary" ->
+                    ParentNotifier.notifyCheckin(
+                        this@PushService,
+                        data["date"].orEmpty(),
+                        data["title"].orEmpty(),
+                        data["body"].orEmpty(),
+                        alert = false,
+                    )
                 else -> Log.w(TAG, "tipo de push desconocido: ${data["type"]}")
             }
         }

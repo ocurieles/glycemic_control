@@ -53,6 +53,19 @@ class FunctionsApi(private val functions: FirebaseFunctions) {
         call<Unit>("leaveFamily", emptyMap()) {}
     }
 
+    /** Stubs hasta F7 (docs/08 F5): devuelven `FunctionsCallError(code = "UNIMPLEMENTED")`. */
+    suspend fun setLibreLinkUp(email: String, password: String) {
+        call<Unit>("setLibreLinkUp", mapOf("email" to email, "password" to password)) {}
+    }
+
+    suspend fun testLibreLinkUp() {
+        call<Unit>("testLibreLinkUp", emptyMap()) {}
+    }
+
+    suspend fun removeLibreLinkUp() {
+        call<Unit>("removeLibreLinkUp", emptyMap()) {}
+    }
+
     @Suppress("UNCHECKED_CAST")
     private suspend fun <T> call(name: String, data: Map<String, Any?>, map: (Map<String, Any?>) -> T): T {
         try {

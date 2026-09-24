@@ -7,3 +7,4 @@ import "./config";
 export { createFamily, createPairingCode, joinFamily, leaveFamily } from "./families";
 export { onEventCreated } from "./events";
 export { onFamilyUpdated } from "./settings";
+export { removeLibreLinkUp, setLibreLinkUp, testLibreLinkUp } from "./libre";
