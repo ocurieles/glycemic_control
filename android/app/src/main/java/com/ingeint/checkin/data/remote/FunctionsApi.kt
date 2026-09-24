@@ -53,7 +53,7 @@ class FunctionsApi(private val functions: FirebaseFunctions) {
         call<Unit>("leaveFamily", emptyMap()) {}
     }
 
-    /** Stubs hasta F7 (docs/08 F5): devuelven `FunctionsCallError(code = "UNIMPLEMENTED")`. */
+    /** docs/05: si las credenciales son inválidas u otro error, `call` lanza [FunctionsCallError] con un mensaje ya en español. */
     suspend fun setLibreLinkUp(email: String, password: String) {
         call<Unit>("setLibreLinkUp", mapOf("email" to email, "password" to password)) {}
     }

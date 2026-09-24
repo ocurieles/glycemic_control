@@ -102,8 +102,7 @@ class ParentSettingsViewModel(private val container: AppContainer) : ViewModel()
         }
     }
 
-    private fun friendlyLibreError(e: FunctionsCallError): String =
-        if (e.code == "UNIMPLEMENTED") "La integración con LibreLinkUp llega en F7." else "No se pudo conectar."
+    private fun friendlyLibreError(e: FunctionsCallError): String = e.message ?: "No se pudo conectar."
 
     fun leaveFamily() {
         viewModelScope.launch {

@@ -78,5 +78,12 @@ sequenceDiagram
 | `stale` | (en la línea de tiempo) "Sin lectura cercana a esa hora" |
 | `not_configured` | "Conecta LibreLinkUp para ver el valor" |
 
+## Verificación F7 (revisión del código actual de la comunidad)
+Antes de implementar se revisó el código fuente actual (no solo el README) de `timoschlueter/nightscout-librelink-up` y `DiaKEM/libre-link-up-api-client` (el nombre correcto en npm es `@diakem/libre-link-up-api-client`; `libre-link-up-api-client` a secas no existe). Confirma casi todo lo de arriba. Diferencias encontradas:
+- Los dos proyectos difieren entre sí en detalles menores (p. ej. `product: llu.ios` vs `llu.android`, algún header de más o de menos). Esta implementación sigue el conjunto documentado arriba (estilo DiaKEM), que es el más simple y el que ya estaba en este doc.
+- **Riesgo nuevo, no estaba documentado:** el proyecto de timoschlueter agrega recientemente un `User-Agent` de iPhone falso y reordena las cifras TLS específicamente para evitar el fingerprinting de Cloudflare, lo que sugiere que Abbott/LibreView empezó a bloquear clientes "no navegador" en algunos momentos. Si `testLibreLinkUp` empieza a fallar con `network` de forma persistente sin motivo aparente, esta es la primera hipótesis a revisar (no implementado aquí: se documenta como riesgo abierto, ver CLAUDE.md "Pendiente").
+- Confirmado con más detalle: `status: 2` = credenciales inválidas, `status: 4` = falta aceptar un paso adicional (términos u otro) — ya estaban contemplados en este doc y se implementaron tal cual.
+- La región `CN` usa un dominio totalmente distinto (`api-cn.myfreestyle.cn`, no `libreview.io`). No es relevante para Venezuela/`America/Caracas`, así que no se implementó ese caso especial.
+
 ## Alternativa futura (fase 3, opcional)
 Leer la notificación persistente de LibreLink en el teléfono del niño con `NotificationListenerService`. Solo funciona si la versión instalada muestra el valor en la notificación. Tendría la ventaja de funcionar sin internet: el valor se guarda en el outbox junto a la revisión. Queda fuera del MVP.
