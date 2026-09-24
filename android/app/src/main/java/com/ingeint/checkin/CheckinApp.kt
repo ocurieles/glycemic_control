@@ -1,8 +1,13 @@
 package com.ingeint.checkin
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkRequest
+import androidx.core.content.getSystemService
 import com.ingeint.checkin.notify.Channels
 import com.ingeint.checkin.reminders.ReminderScheduler
+import com.ingeint.checkin.sync.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +43,27 @@ class CheckinApp : Application() {
                     ReminderScheduler(this@CheckinApp).scheduleNext(settings)
                 }
             }
+
+            if (role != null) {
+                SyncWorker.enqueue(this@CheckinApp)
+                SyncWorker.enqueuePeriodic(this@CheckinApp) // respaldo cada 15 min (docs/07)
+            }
         }
+
+        registerNetworkCallback()
+    }
+
+    /** Encola el outbox al volver la red, mientras la app vive (docs/07 "SyncWorker"). */
+    private fun registerNetworkCallback() {
+        val connectivityManager = getSystemService<ConnectivityManager>() ?: return
+        val request = NetworkRequest.Builder().addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+        connectivityManager.registerNetworkCallback(
+            request,
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    SyncWorker.enqueue(this@CheckinApp)
+                }
+            },
+        )
     }
 }

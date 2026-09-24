@@ -81,6 +81,7 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
             auth.currentUser?.getIdToken(true)?.await() // recibir los custom claims (docs/04)
             container.prefs.saveLink(role = "parent", familyId = result.familyId, childName = childName.trim(), displayName = parentName.trim())
             Channels.createForRole(containerContext(), "parent")
+            com.ingeint.checkin.sync.SyncWorker.enqueuePeriodic(containerContext())
             _state.update {
                 it.copy(
                     loading = false,
@@ -109,6 +110,7 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
                 displayName = if (role == "parent") displayName!!.trim() else result.childName,
             )
             Channels.createForRole(containerContext(), role)
+            com.ingeint.checkin.sync.SyncWorker.enqueuePeriodic(containerContext())
             if (role == "child") fetchAndScheduleSettings(result.familyId)
             _state.update { it.copy(loading = false, step = SetupStep.Linked(role, result.childName)) }
         }

@@ -9,6 +9,7 @@ import com.ingeint.checkin.notify.ChildNotifier
 import com.ingeint.checkin.notify.Haptics
 import com.ingeint.checkin.notify.VibrationPattern
 import com.ingeint.checkin.reminders.ReminderScheduler
+import com.ingeint.checkin.reminders.ReminderTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,13 +56,23 @@ class PushService : FirebaseMessagingService() {
                 // --- Niño ---
                 "sync" -> refreshSettings(app)
                 "nudge" -> {
-                    // Redundancia por si el fabricante mató la alarma (docs/06). El
-                    // "máximo un refuerzo por slot" real (con lastNudgedSlot) llega con
-                    // el outbox en F4; por ahora siempre refuerza, igual que ACTION_NUDGE.
+                    // Redundancia por si el fabricante mató la alarma (docs/06): se ignora
+                    // si el refuerzo local ya ocurrió o si ya hay una revisión asignada.
                     val slot = data["slot"].orEmpty()
-                    Haptics.vibrate(this@PushService, VibrationPattern.REMINDER)
-                    ChildNotifier.showReminder(this@PushService, slot)
-                    app.container.prefs.saveLastNudgedSlot(slot)
+                    val settings = app.container.prefs.settings.first()
+                    val alreadyNudged = app.container.prefs.lastNudgedSlot.first() == slot
+                    val alreadyChecked =
+                        settings != null && slot.isNotEmpty() &&
+                            app.container.outboxRepository.hasCheckinForSlot(
+                                ReminderTime.dateKeyOf(System.currentTimeMillis(), settings.timezone),
+                                slot,
+                                settings,
+                            )
+                    if (!alreadyNudged && !alreadyChecked) {
+                        Haptics.vibrate(this@PushService, VibrationPattern.REMINDER)
+                        ChildNotifier.showReminder(this@PushService, slot)
+                        app.container.prefs.saveLastNudgedSlot(slot)
+                    }
                 }
                 "parent_message" -> {
                     val at = data["at"]?.toLongOrNull() ?: System.currentTimeMillis()

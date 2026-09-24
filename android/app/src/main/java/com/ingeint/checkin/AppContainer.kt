@@ -6,6 +6,8 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.google.firebase.functions.functions
 import com.google.firebase.messaging.messaging
+import com.ingeint.checkin.data.local.AppDatabase
+import com.ingeint.checkin.data.local.OutboxRepository
 import com.ingeint.checkin.data.local.Prefs
 import com.ingeint.checkin.data.remote.FunctionsApi
 
@@ -38,4 +40,7 @@ class AppContainer(context: Context) {
 
     val prefs = Prefs(context.applicationContext)
     val functionsApi = FunctionsApi(functions)
+
+    /** Outbox (docs/03 §5, docs/07): existe en ambos roles. */
+    val outboxRepository = OutboxRepository(AppDatabase.getInstance(context).outboxDao())
 }

@@ -63,7 +63,7 @@ adb reverse tcp:5001 tcp:5001   # Functions
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F3 cerrada (recordatorios del niño). Siguiente: F4 (outbox, sincronización y SOS).
+- Fase actual: F4 cerrada (outbox, sincronización y SOS). Siguiente: F5 (app de padres).
 - Hecho:
   - **F0/F1**: repo git, backend Functions v2 desplegado en el proyecto real `checkin-familia` (us-east1), Auth anónima + Firestore habilitados, `google-services.json` en `android/app/`.
   - **F1 fix post-deploy**: `joinFamily` pedía `displayName` también al niño y sobrescribía `families.childName`; ahora es obligatorio solo para `role: "parent"` y el niño hereda el `childName` ya existente (docs/04 corregido, función redesplegada).
@@ -84,6 +84,14 @@ adb reverse tcp:5001 tcp:5001   # Functions
     - `ChildScreen` + `ChildViewModel`: botón "Ya me revisé" (sin lógica de envío aún), próximo recordatorio calculado con `ReminderSchedule.nextSlot`, último mensaje de los padres, botón Ayuda con hold de 2 s y anillo de progreso (sin envío aún), listener de Firestore en `families/{fid}` mientras la app está abierta.
     - Test: `ReminderScheduleTest` (JVM), carga `docs/schedule-vectors.json` vía `sourceSets["test"].resources.srcDir("../../docs")` — los mismos 22 vectores que el backend, en verde.
   - **Verificado en dispositivo real (F3)**: con `intervalMinutes=1` (parcheado directo en el emulador de Firestore para una prueba rápida), la alarma vibró **dos veces exactas cada 60 s** con el patrón `REMINDER` y `usage: ALARM` (confirmado con `dumpsys vibrator_manager`, no solo por observación), y quedó programada la siguiente (`dumpsys alarm`). No se probó la sobrevivencia a un reinicio real (`adb reboot`) ni el refuerzo (nudge) disparándose de verdad, por tiempo.
+  - **F4**: `data/local/OutboxEvent` + `OutboxDao` + `AppDatabase` (Room) + `OutboxRepository`: outbox real en ambos roles, con el debounce de 60 s para `checkin` (docs/01 H2) y `hasCheckinForSlot()` para la omisión de recordatorios ya cubiertos.
+    - `sync/SyncWorker`: único y encadenado (`enqueueUniqueWork` + `APPEND_OR_REPLACE`), `NetworkType.CONNECTED`, backoff exponencial 30 s, expedited con fallback, `getForegroundInfo()` con el canal `sync_status`; maneja `PERMISSION_DENIED` distinguiendo "ya existía" (idempotencia) de "teléfono desvinculado" (`REJECTED`); vibra `CONFIRM` solo si algo se iba a sincronizar y lo inició el usuario hace poco.
+    - Se encola al registrar cualquier evento, al volver la red (`ConnectivityManager.registerNetworkCallback` en `CheckinApp`), en `BootReceiver`, al vincularse, y con un periódico de respaldo cada 15 min.
+    - `ReminderReceiver`/`PushService` ("nudge"): ya omiten el aviso si el outbox tiene una revisión asignada al slot (`assign()` de `ReminderSchedule`), o si ya hubo refuerzo local (`lastNudgedSlot`).
+    - `ChildScreen`/`ChildViewModel`: "Ya me revisé" y "Ayuda" ya registran de verdad en Room y encolan `SyncWorker`; la UI muestra "Enviado ✓ HH:mm" o "Guardado — se enviará al tener internet (N pendientes)" (docs/06).
+    - SOS: `LocationHelper` (ubicación con timeout de 5 s, nunca bloquea), `SmsFallback` (SMS de respaldo cuando no hay red validada y `smsFallbackEnabled`, con el texto exacto de docs/07).
+    - `Prefs.correctedNowMillis()`: `clientAt` ya corregido con el offset de reloj conocido.
+    - Tests: `SyncWorkerPayloadTest` (JVM, el mapeo exacto de `OutboxEvent` al payload de Firestore) y `OutboxRepositoryInstrumentedTest` (androidTest, Room real en memoria: debounce, SOS nunca se debouncea, `hasCheckinForSlot`) — los 8 tests instrumentados (3 de F2 + 5 nuevos) corridos en un emulador Android real, todos en verde.
 - Decisiones tomadas durante la implementación:
   - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta).
   - Runtime de Cloud Functions: **`nodejs22`**. Se agregó `luxon` al backend para manejo de timezone con DST real.
@@ -91,9 +99,12 @@ adb reverse tcp:5001 tcp:5001   # Functions
   - Scripts de test separados en `functions/package.json` (`test`/`test:rules`/`test:integration`/`test:all`); `CLAUDE.md` → Comandos actualizado.
   - Requiere JDK ≥ 21 para los emuladores de Firebase (Gradle usa JDK 17 aparte, sin conflicto).
   - **AGP 9.4.1 + `compileSdk/targetSdk 37`**, sin el plugin `org.jetbrains.kotlin.android` (AGP 9+ trae Kotlin integrado, ver `kotl.in/gradle/agp-built-in-kotlin`). Se intentó primero con AGP 8.13.2 (más conservador, como con TypeScript), pero las versiones "última estable" de Compose/Lifecycle/Core de sept. 2026 ya exigen API 37 y AGP 9.1+, así que downgradear esas librerías habría sido una persecución sin fin. Requirió instalar `platforms;android-37.2` + `build-tools;37.0.0` vía `cmdline-tools`/`sdkmanager` y regenerar el wrapper con **Gradle 9.7.1** (AGP 8.x deja de funcionar desde Gradle 9.6+).
+  - `clockOffsetMs` (docs/07) se recalcula en **cada** sync exitoso, no "una vez al día" como sugiere la letra del doc: es más simple de implementar y, aunque hace más lecturas a Firestore, sigue siendo barato (una lectura por corrida del `SyncWorker`, no por evento) y más preciso.
 - Pendiente / riesgos abiertos:
   - Falta probar `adb reboot` con la alarma programada (docs/08 F3 "Listo cuando": sobrevive a un reinicio) y confirmar que el refuerzo (nudge) se dispara de verdad una sola vez.
   - Falta un push de prueba real al niño (`nudge`/`sync`) desde el emulador de Functions, para probar `PushService` de punta a punta.
+  - **F4**: no se probó de punta a punta en un dispositivo real el checklist de "Pruebas obligatorias" de docs/07 (modo avión → 5 revisiones → reiniciar → reconectar; matar la app con pendientes; 7 días sin red). Sí se probaron con Room real: el debounce y `hasCheckinForSlot`.
+  - `SmsFallback`/`LocationHelper` no se probaron con un SOS real (necesitan permisos de ubicación/SMS otorgados y, para el SMS, señal celular real, no disponible en el emulador).
   - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
   - Confirmar los headers actuales de LibreLinkUp antes de F7.
   - `PushService.onNewToken` genera un warning del compilador ("overrides a deprecated member"); revisar si el SDK de Firebase Messaging 34.19.0 ya tiene un reemplazo antes de F5.

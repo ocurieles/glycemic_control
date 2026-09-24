@@ -81,6 +81,9 @@ class Prefs(private val context: Context) {
 
     val clockOffsetMs: Flow<Long> = context.dataStore.data.map { it[Keys.CLOCK_OFFSET_MS] ?: 0L }
 
+    /** `clientAt` corregido con el offset de reloj conocido (docs/07 "Desviación de reloj"). */
+    suspend fun correctedNowMillis(): Long = System.currentTimeMillis() + clockOffsetMs.first()
+
     /** Último slot ("HH:mm") en el que ya ocurrió el refuerzo local (docs/06, evita doble nudge). */
     suspend fun saveLastNudgedSlot(slot: String) {
         context.dataStore.edit { it[Keys.LAST_NUDGED_SLOT] = slot }

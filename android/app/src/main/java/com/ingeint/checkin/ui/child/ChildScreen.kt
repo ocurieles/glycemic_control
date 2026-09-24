@@ -1,6 +1,7 @@
 package com.ingeint.checkin.ui.child
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,8 +39,8 @@ import kotlinx.coroutines.delay
 private const val HELP_HOLD_MS = 2000L
 
 /**
- * Pantalla del niño (docs/06 "Niño (ChildScreen)"). El botón "Ya me revisé" y el de
- * Ayuda todavía no envían nada: el outbox y el envío real llegan en F4.
+ * Pantalla del niño (docs/06 "Niño (ChildScreen)"). "Ya me revisé" y "Ayuda" ya
+ * registran en el outbox y sincronizan de verdad (docs/07, F4).
  */
 @Composable
 fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
@@ -51,9 +52,12 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CheckinButton()
+            CheckinButton(onClick = viewModel::onCheckin)
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
+            CheckinStatusText(state)
+
+            Spacer(Modifier.height(16.dp))
             Text(
                 text =
                     state.nextReminderText?.let { stringResource(R.string.child_next_reminder_label, it) }
@@ -72,7 +76,7 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
             }
 
             Spacer(Modifier.height(48.dp))
-            HelpButton()
+            HelpButton(onComplete = viewModel::onSos)
         }
 
         IconButton(onClick = onOpenDiagnostics, modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)) {
@@ -82,13 +86,24 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
 }
 
 @Composable
-private fun CheckinButton() {
-    // Sin lógica de envío aún (docs/08 F3): el outbox real llega en F4.
+private fun CheckinStatusText(state: ChildUiState) {
+    val text =
+        when (state.checkinStatus) {
+            CheckinStatus.SENT -> state.checkinStatusTimeText?.let { stringResource(R.string.child_checkin_sent, it) }
+            CheckinStatus.PENDING -> stringResource(R.string.child_checkin_pending, state.pendingCount)
+            CheckinStatus.NONE -> null
+        }
+    text?.let { Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
+}
+
+@Composable
+private fun CheckinButton(onClick: () -> Unit) {
     Box(
         modifier =
             Modifier
                 .size(220.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -101,7 +116,7 @@ private fun CheckinButton() {
 }
 
 @Composable
-private fun HelpButton() {
+private fun HelpButton(onComplete: () -> Unit) {
     var isPressed by remember { mutableStateOf(false) }
     var progress by remember { mutableFloatStateOf(0f) }
 
@@ -110,7 +125,10 @@ private fun HelpButton() {
             val start = System.currentTimeMillis()
             while (isPressed) {
                 progress = ((System.currentTimeMillis() - start).toFloat() / HELP_HOLD_MS).coerceIn(0f, 1f)
-                if (progress >= 1f) break // SOS real: F4
+                if (progress >= 1f) {
+                    onComplete()
+                    break
+                }
                 delay(16)
             }
         } else {

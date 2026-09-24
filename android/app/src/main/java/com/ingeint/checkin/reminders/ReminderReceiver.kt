@@ -3,21 +3,20 @@ package com.ingeint.checkin.reminders
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.ingeint.checkin.CheckinApp
+import com.ingeint.checkin.data.local.OutboxEventType
 import com.ingeint.checkin.data.model.ReminderSettings
 import com.ingeint.checkin.notify.ChildNotifier
 import com.ingeint.checkin.notify.Haptics
 import com.ingeint.checkin.notify.VibrationPattern
+import com.ingeint.checkin.sync.SyncWorker
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private const val TAG = "ReminderReceiver"
-
 /**
  * Recibe las alarmas locales del niño (docs/06). `ACTION_REMINDER` siempre reprograma
- * la siguiente alarma (`scheduleNext`), pase lo que pase. La omisión de un slot ya
- * cubierto por una revisión (vía outbox) llega en F4; por ahora siempre notifica.
+ * la siguiente alarma (`scheduleNext`), pase lo que pase. Omite el aviso si el outbox
+ * ya tiene una revisión asignada a ese slot (docs/06, vía `assign()` de F4).
  */
 class ReminderReceiver : BroadcastReceiver() {
     companion object {
@@ -41,7 +40,13 @@ class ReminderReceiver : BroadcastReceiver() {
                             intent.getStringExtra(EXTRA_SLOT_HHMM),
                             intent.getStringExtra(EXTRA_SLOT_DATE_KEY),
                         )
-                    ACTION_NUDGE -> onNudge(context, app, intent.getStringExtra(EXTRA_SLOT_HHMM))
+                    ACTION_NUDGE ->
+                        onNudge(
+                            context,
+                            app,
+                            intent.getStringExtra(EXTRA_SLOT_HHMM),
+                            intent.getStringExtra(EXTRA_SLOT_DATE_KEY),
+                        )
                     ACTION_ACK -> onAck(context, app)
                 }
             } finally {
@@ -53,10 +58,15 @@ class ReminderReceiver : BroadcastReceiver() {
     private suspend fun onReminder(context: Context, app: CheckinApp, slotHhmm: String?, slotDateKey: String?) {
         val settings = app.container.prefs.settings.first() ?: ReminderSettings()
         try {
-            Haptics.vibrate(context, VibrationPattern.REMINDER)
-            ChildNotifier.showReminder(context, slotHhmm ?: "")
-            if (slotHhmm != null && slotDateKey != null) {
-                ReminderScheduler(context).scheduleNudge(settings, slotHhmm, slotDateKey)
+            val alreadyChecked =
+                slotHhmm != null && slotDateKey != null &&
+                    app.container.outboxRepository.hasCheckinForSlot(slotDateKey, slotHhmm, settings)
+            if (!alreadyChecked) {
+                Haptics.vibrate(context, VibrationPattern.REMINDER)
+                ChildNotifier.showReminder(context, slotHhmm ?: "")
+                if (slotHhmm != null && slotDateKey != null) {
+                    ReminderScheduler(context).scheduleNudge(settings, slotHhmm, slotDateKey)
+                }
             }
         } finally {
             // Siempre reprograma el siguiente, pase lo que pase arriba (docs/06).
@@ -64,18 +74,30 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun onNudge(context: Context, app: CheckinApp, slotHhmm: String?) {
+    private suspend fun onNudge(context: Context, app: CheckinApp, slotHhmm: String?, slotDateKey: String?) {
         val settings = app.container.prefs.settings.first() ?: ReminderSettings()
+        val alreadyChecked =
+            slotHhmm != null && slotDateKey != null &&
+                app.container.outboxRepository.hasCheckinForSlot(slotDateKey, slotHhmm, settings)
+        if (alreadyChecked) return
         Haptics.vibrate(context, VibrationPattern.REMINDER)
         ChildNotifier.showReminder(context, slotHhmm ?: "")
         app.container.prefs.saveLastNudgedSlot(slotHhmm ?: "")
     }
 
+    /** Acción "Listo" de la notificación (docs/06: mismo flujo que el botón de la app). */
     private suspend fun onAck(context: Context, app: CheckinApp) {
-        // F4 agrega aquí OutboxRepository.record(checkin). Por ahora solo se cancela
-        // la notificación y el refuerzo (docs/08 F3).
-        Log.i(TAG, "Ack de recordatorio recibido (outbox llega en F4)")
         ChildNotifier.cancelReminder(context)
         ReminderScheduler(context).cancelNudge()
+
+        val clientAt = app.container.prefs.correctedNowMillis()
+        val offset = app.container.prefs.clockOffsetMs.first()
+        app.container.outboxRepository.record(
+            type = OutboxEventType.CHECKIN,
+            clientAtMillis = clientAt,
+            clockOffsetMs = offset,
+            source = "notification",
+        )
+        SyncWorker.enqueue(context)
     }
 }

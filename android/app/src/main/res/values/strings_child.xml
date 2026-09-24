@@ -10,6 +10,8 @@
     <string name="setup_child_code_hint">Código de 6 dígitos</string>
 
     <string name="child_checkin_button">Ya me revisé</string>
+    <string name="child_checkin_sent">Enviado ✓ %1$s</string>
+    <string name="child_checkin_pending">Guardado — se enviará al tener internet (%1$d pendientes)</string>
     <string name="child_next_reminder_label">Próximo recordatorio: %1$s</string>
     <string name="child_next_reminder_none">Sin recordatorios hoy</string>
     <string name="child_last_message_label">De %1$s: %2$s</string>
@@ -51,4 +53,5 @@
 
     <string name="notification_reminder_title">Recordatorio</string>
     <string name="notification_message_title">Mensaje</string>
+    <string name="sync_status_title">Sincronizando…</string>
 </resources>
