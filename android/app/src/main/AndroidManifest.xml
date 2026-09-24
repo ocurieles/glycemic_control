@@ -53,6 +53,19 @@
             </intent-filter>
         </service>
 
+        <!-- docs/06 "Recordatorios": ReminderReceiver se dispara solo por PendingIntent
+             explícito (AlarmManager), no necesita intent-filter. -->
+        <receiver android:name=".reminders.ReminderReceiver" android:exported="false" />
+
+        <receiver android:name=".reminders.BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- WorkManager usa su propio SystemForegroundService; se sobrescribe cuando
              SyncWorker (F4) declare foregroundServiceType="dataSync". -->
         <service

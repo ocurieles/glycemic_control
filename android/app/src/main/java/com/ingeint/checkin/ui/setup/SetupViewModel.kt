@@ -109,6 +109,7 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
                 displayName = if (role == "parent") displayName!!.trim() else result.childName,
             )
             Channels.createForRole(containerContext(), role)
+            if (role == "child") fetchAndScheduleSettings(result.familyId)
             _state.update { it.copy(loading = false, step = SetupStep.Linked(role, result.childName)) }
         }
     }
@@ -147,4 +148,16 @@ class SetupViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun containerContext() = container.appContextForChannels
+
+    /** El niño no recibe settings en `joinFamily`; los busca una vez apenas se vincula. */
+    private suspend fun fetchAndScheduleSettings(familyId: String) {
+        runCatching {
+            val snap = container.firestore.collection("families").document(familyId).get().await()
+            @Suppress("UNCHECKED_CAST")
+            val settingsMap = snap.get("settings") as? Map<String, Any?> ?: return
+            val settings = com.ingeint.checkin.data.model.ReminderSettings.fromMap(settingsMap)
+            container.prefs.saveSettings(settings)
+            com.ingeint.checkin.reminders.ReminderScheduler(containerContext()).scheduleNext(settings)
+        }.onFailure { android.util.Log.w("SetupViewModel", "no se pudieron cargar los settings iniciales", it) }
+    }
 }

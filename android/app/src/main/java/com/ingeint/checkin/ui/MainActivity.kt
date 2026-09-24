@@ -15,9 +15,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ingeint.checkin.CheckinApp
+import com.ingeint.checkin.ui.child.ChildScreen
+import com.ingeint.checkin.ui.child.ChildViewModel
 import com.ingeint.checkin.ui.diagnostics.DiagnosticsScreen
 import com.ingeint.checkin.ui.permissions.PermissionsWizardScreen
-import com.ingeint.checkin.ui.placeholder.ChildHomeScreen
 import com.ingeint.checkin.ui.placeholder.ParentHomeScreen
 import com.ingeint.checkin.ui.setup.SetupScreen
 import com.ingeint.checkin.ui.setup.SetupViewModel
@@ -95,7 +96,8 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
         }
 
         composable(Routes.CHILD_HOME) {
-            ChildHomeScreen(onOpenDiagnostics = { navController.navigate(Routes.diagnostics("child")) })
+            val viewModel: ChildViewModel = viewModel(factory = AppViewModelFactory(container) { ChildViewModel(it) })
+            ChildScreen(viewModel, onOpenDiagnostics = { navController.navigate(Routes.diagnostics("child")) })
         }
 
         composable(Routes.PARENT_HOME) { backStackEntry ->

@@ -5,6 +5,10 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.ingeint.checkin.CheckinApp
 import com.ingeint.checkin.data.model.ReminderSettings
+import com.ingeint.checkin.notify.ChildNotifier
+import com.ingeint.checkin.notify.Haptics
+import com.ingeint.checkin.notify.VibrationPattern
+import com.ingeint.checkin.reminders.ReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,9 +55,13 @@ class PushService : FirebaseMessagingService() {
                 // --- Niño ---
                 "sync" -> refreshSettings(app)
                 "nudge" -> {
-                    // TODO(F3): si no hubo revisión ni refuerzo local para el slot, vibrar
-                    // REMINDER y mostrar la notificación (ver ReminderReceiver.ACTION_NUDGE).
-                    Log.d(TAG, "nudge recibido para slot=${data["slot"]}")
+                    // Redundancia por si el fabricante mató la alarma (docs/06). El
+                    // "máximo un refuerzo por slot" real (con lastNudgedSlot) llega con
+                    // el outbox en F4; por ahora siempre refuerza, igual que ACTION_NUDGE.
+                    val slot = data["slot"].orEmpty()
+                    Haptics.vibrate(this@PushService, VibrationPattern.REMINDER)
+                    ChildNotifier.showReminder(this@PushService, slot)
+                    app.container.prefs.saveLastNudgedSlot(slot)
                 }
                 "parent_message" -> {
                     val at = data["at"]?.toLongOrNull() ?: System.currentTimeMillis()
@@ -81,8 +89,9 @@ class PushService : FirebaseMessagingService() {
             val snap = app.container.firestore.collection("families").document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val settingsMap = snap.get("settings") as? Map<String, Any?> ?: return@runCatching
-            app.container.prefs.saveSettings(ReminderSettings.fromMap(settingsMap))
-            // TODO(F3): ReminderScheduler.scheduleNext() con los settings nuevos.
+            val settings = ReminderSettings.fromMap(settingsMap)
+            app.container.prefs.saveSettings(settings)
+            ReminderScheduler(app).scheduleNext(settings)
         }.onFailure { Log.w(TAG, "no se pudo refrescar settings tras push sync", it) }
     }
 }

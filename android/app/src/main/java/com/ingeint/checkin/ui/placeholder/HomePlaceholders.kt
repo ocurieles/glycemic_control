@@ -20,35 +20,9 @@ import androidx.compose.ui.unit.dp
 import com.ingeint.checkin.R
 
 /**
- * Placeholders de F2: el resto de la pantalla (botón "Ya me revisé", cumplimiento,
- * mensajes, SOS…) llega en F3/F5. Aquí solo se confirma que la vinculación
- * funcionó y se deja el acceso a Diagnóstico.
+ * Placeholder de padres: el resto de la pantalla (cumplimiento, mensajes, SOS…) llega
+ * en F5. La del niño ya es real desde F3 (ver [com.ingeint.checkin.ui.child.ChildScreen]).
  */
-@Composable
-fun ChildHomeScreen(onOpenDiagnostics: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.child_home_placeholder_title),
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.child_home_placeholder_body),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-        }
-        IconButton(onClick = onOpenDiagnostics, modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)) {
-            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.permissions_title))
-        }
-    }
-}
-
 @Composable
 fun ParentHomeScreen(childName: String, onOpenDiagnostics: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {

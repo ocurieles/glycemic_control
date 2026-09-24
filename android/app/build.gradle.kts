@@ -53,8 +53,14 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
-        // El mismo contrato de vectores que usa el backend (docs/09, regla 7 de CLAUDE.md).
-        // Se activa en F3 cuando exista ReminderSchedule; por ahora no hay tests que lo usen.
+    }
+
+    sourceSets {
+        // Mismo contrato de vectores que usa el backend (docs/09, regla 7 de CLAUDE.md):
+        // ReminderScheduleTest lee docs/schedule-vectors.json como recurso de classpath.
+        getByName("test") {
+            resources.srcDir("../../docs")
+        }
     }
 }
 
@@ -90,6 +96,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(libs.junit)
+    // org.json real (no el stub de android.jar que lanza "not mocked" en tests JVM puros).
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))

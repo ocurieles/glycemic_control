@@ -9,8 +9,12 @@
     <string name="setup_child_join_title">Ingresa el código que te dieron</string>
     <string name="setup_child_code_hint">Código de 6 dígitos</string>
 
-    <string name="child_home_placeholder_title">Check-in</string>
-    <string name="child_home_placeholder_body">Ya estás vinculado. El botón para avisar que te revisaste llega en la próxima parte.</string>
+    <string name="child_checkin_button">Ya me revisé</string>
+    <string name="child_next_reminder_label">Próximo recordatorio: %1$s</string>
+    <string name="child_next_reminder_none">Sin recordatorios hoy</string>
+    <string name="child_last_message_label">De %1$s: %2$s</string>
+    <string name="child_help_button">Ayuda</string>
+    <string name="child_help_hint">Mantén presionado 2 segundos</string>
 
     <string name="permissions_title">Permisos</string>
     <string name="permissions_notifications">Notificaciones</string>

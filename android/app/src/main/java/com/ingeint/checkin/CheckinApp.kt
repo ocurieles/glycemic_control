@@ -2,6 +2,7 @@ package com.ingeint.checkin
 
 import android.app.Application
 import com.ingeint.checkin.notify.Channels
+import com.ingeint.checkin.reminders.ReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +28,16 @@ class CheckinApp : Application() {
 
             // Si el teléfono ya estaba vinculado (reinicio de la app), recreamos sus canales:
             // createNotificationChannels() es idempotente, así que esto es seguro en cada arranque.
-            container.prefs.role.first()?.let { role -> Channels.createForRole(this@CheckinApp, role) }
+            val role = container.prefs.role.first()
+            role?.let { Channels.createForRole(this@CheckinApp, it) }
+
+            // El niño reprograma su alarma en cada arranque de la app, no solo tras
+            // reiniciar el teléfono (docs/06): más barato que esperar a BootReceiver.
+            if (role == "child") {
+                container.prefs.settings.first()?.let { settings ->
+                    ReminderScheduler(this@CheckinApp).scheduleNext(settings)
+                }
+            }
         }
     }
 }

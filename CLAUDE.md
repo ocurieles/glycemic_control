@@ -63,7 +63,7 @@ adb reverse tcp:5001 tcp:5001   # Functions
 
 ## Estado
 <!-- Claude Code: actualiza esta sección al cerrar cada fase -->
-- Fase actual: F2 cerrada (app Android base y vinculación). Siguiente: F3 (recordatorios del niño).
+- Fase actual: F3 cerrada (recordatorios del niño). Siguiente: F4 (outbox, sincronización y SOS).
 - Hecho:
   - **F0/F1**: repo git, backend Functions v2 desplegado en el proyecto real `checkin-familia` (us-east1), Auth anónima + Firestore habilitados, `google-services.json` en `android/app/`.
   - **F1 fix post-deploy**: `joinFamily` pedía `displayName` también al niño y sobrescribía `families.childName`; ahora es obligatorio solo para `role: "parent"` y el niño hereda el `childName` ya existente (docs/04 corregido, función redesplegada).
@@ -78,6 +78,12 @@ adb reverse tcp:5001 tcp:5001   # Functions
     - Tests: `ChildStringsForbiddenWordsTest` (JVM) y `ChildChannelsInstrumentedTest` (androidTest).
   - `./gradlew assembleDebug testDebugUnitTest connectedDebugAndroidTest lint` — **todo en verde**, `connectedDebugAndroidTest` corrido en un teléfono real (WP53 Pro, Android 16/API 36; ver "verificado en dispositivo real" abajo).
   - **Verificado en dispositivo real** (el teléfono de Cesar, con LibreLink instalado, contra los emuladores de Firebase — no contra producción): rol padre completo de punta a punta — crear familia → código de vinculación real (`createFamily` procesado por el emulador de Functions) → asistente de permisos → pantalla de inicio. Se limpiaron los datos de prueba de la app al terminar (`pm clear`) para no dejar el teléfono en un estado de prueba.
+  - **F3**: `reminders/` (`ReminderSchedule` + `ReminderTime`, espejo exacto de `schedule.ts`; `ReminderScheduler` con `AlarmManager.setExactAndAllowWhileIdle` + fallback inexacto; `ReminderReceiver` para `ACTION_REMINDER`/`ACTION_NUDGE`/`ACTION_ACK`; `BootReceiver` para `BOOT_COMPLETED`/`MY_PACKAGE_REPLACED`/`TIME_SET`/`TIMEZONE_CHANGED`).
+    - `ChildNotifier`: notificación "Recordatorio" neutra, `VISIBILITY_PRIVATE` + `publicVersion`, acción "Listo" que por ahora solo cancela y loguea (el outbox real llega en F4).
+    - `PushService`: `nudge` y `sync` ya actúan de verdad (vibran/reprograman), no solo `TODO`.
+    - `ChildScreen` + `ChildViewModel`: botón "Ya me revisé" (sin lógica de envío aún), próximo recordatorio calculado con `ReminderSchedule.nextSlot`, último mensaje de los padres, botón Ayuda con hold de 2 s y anillo de progreso (sin envío aún), listener de Firestore en `families/{fid}` mientras la app está abierta.
+    - Test: `ReminderScheduleTest` (JVM), carga `docs/schedule-vectors.json` vía `sourceSets["test"].resources.srcDir("../../docs")` — los mismos 22 vectores que el backend, en verde.
+  - **Verificado en dispositivo real (F3)**: con `intervalMinutes=1` (parcheado directo en el emulador de Firestore para una prueba rápida), la alarma vibró **dos veces exactas cada 60 s** con el patrón `REMINDER` y `usage: ALARM` (confirmado con `dumpsys vibrator_manager`, no solo por observación), y quedó programada la siguiente (`dumpsys alarm`). No se probó la sobrevivencia a un reinicio real (`adb reboot`) ni el refuerzo (nudge) disparándose de verdad, por tiempo.
 - Decisiones tomadas durante la implementación:
   - **TypeScript 5.9.3** en vez de la 7.0.2 recién publicada (reescritura completa del compilador; el ecosistema de Cloud Functions/build tools aún no la soporta).
   - Runtime de Cloud Functions: **`nodejs22`**. Se agregó `luxon` al backend para manejo de timezone con DST real.
@@ -86,7 +92,8 @@ adb reverse tcp:5001 tcp:5001   # Functions
   - Requiere JDK ≥ 21 para los emuladores de Firebase (Gradle usa JDK 17 aparte, sin conflicto).
   - **AGP 9.4.1 + `compileSdk/targetSdk 37`**, sin el plugin `org.jetbrains.kotlin.android` (AGP 9+ trae Kotlin integrado, ver `kotl.in/gradle/agp-built-in-kotlin`). Se intentó primero con AGP 8.13.2 (más conservador, como con TypeScript), pero las versiones "última estable" de Compose/Lifecycle/Core de sept. 2026 ya exigen API 37 y AGP 9.1+, así que downgradear esas librerías habría sido una persecución sin fin. Requirió instalar `platforms;android-37.2` + `build-tools;37.0.0` vía `cmdline-tools`/`sdkmanager` y regenerar el wrapper con **Gradle 9.7.1** (AGP 8.x deja de funcionar desde Gradle 9.6+).
 - Pendiente / riesgos abiertos:
-  - Falta probar el flujo del **niño** de extremo a extremo (unirse con el código de un padre) y el envío de un push de prueba al rol correcto — solo se probó el lado del padre en esta sesión.
+  - Falta probar `adb reboot` con la alarma programada (docs/08 F3 "Listo cuando": sobrevive a un reinicio) y confirmar que el refuerzo (nudge) se dispara de verdad una sola vez.
+  - Falta un push de prueba real al niño (`nudge`/`sync`) desde el emulador de Functions, para probar `PushService` de punta a punta.
   - Validar la vibración en modo silencio en el teléfono real de Cesar (F8/campo).
   - Confirmar los headers actuales de LibreLinkUp antes de F7.
   - `PushService.onNewToken` genera un warning del compilador ("overrides a deprecated member"); revisar si el SDK de Firebase Messaging 34.19.0 ya tiene un reemplazo antes de F5.

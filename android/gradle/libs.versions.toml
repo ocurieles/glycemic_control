@@ -18,6 +18,7 @@ coroutinesPlayServices = "1.11.0"
 junit = "4.13.2"
 androidxTestExtJunit = "1.3.0"
 espresso = "3.7.0"
+orgJson = "20260814"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }
 
 junit = { module = "junit:junit", version.ref = "junit" }
+org-json = { module = "org.json:json", version.ref = "orgJson" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
