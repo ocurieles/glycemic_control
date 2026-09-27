@@ -54,6 +54,12 @@
     <string name="parent_event_sos_ack">Respuesta</string>
     <string name="parent_event_insulin_dose">Insulina registrada</string>
 
+    <string name="parent_insulin_calendar_title">Calendario de insulina</string>
+    <string name="parent_insulin_prev_month">◀ Anterior</string>
+    <string name="parent_insulin_next_month">Siguiente ▶</string>
+    <string name="parent_insulin_no_doses">Sin registros ese día</string>
+    <string name="parent_insulin_total">Total del día: %1$s U</string>
+
     <string name="parent_settings_title">Ajustes</string>
     <string name="parent_settings_schedule_title">Horario</string>
     <string name="parent_settings_interval">Intervalo (minutos)</string>

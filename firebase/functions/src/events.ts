@@ -5,6 +5,7 @@ import { lluAppVersion, lluEncKey } from "./config";
 import { resolveSettings } from "./families";
 import { lookupGlucoseForEvent } from "./libre/service";
 import { sendToChild, sendToParents } from "./messaging";
+import { addInsulinDose } from "./insulin";
 import { formatCheckinMessage, formatInsulinDoseMessage, formatSosMessage, GlucoseInfo } from "./messages";
 import { registerLateCheckin } from "./pushBuffer";
 import { recomputeDay } from "./recompute";
@@ -108,7 +109,9 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
     }
     case "insulin_dose": {
       await snap.ref.update(baseUpdate);
-      const { title, body } = formatInsulinDoseMessage(childName, data.doseUnits as number, realAtMs);
+      const doseUnits = data.doseUnits as number;
+      await addInsulinDose(familyId, dateKeyOf(realAtMs, settings.timezone), eventId, realAtMs, doseUnits);
+      const { title, body } = formatInsulinDoseMessage(childName, doseUnits, realAtMs);
       await sendToParents(familyId, "insulin_dose", { title, body, eventId });
       break;
     }

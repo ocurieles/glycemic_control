@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -44,7 +45,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit) {
+fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
@@ -57,8 +58,13 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(state.childName, style = MaterialTheme.typography.headlineSmall)
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_icon_description))
+                    Row {
+                        IconButton(onClick = onOpenInsulin) {
+                            Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.parent_insulin_calendar_title))
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_icon_description))
+                        }
                     }
                 }
                 Spacer(Modifier.height(8.dp))

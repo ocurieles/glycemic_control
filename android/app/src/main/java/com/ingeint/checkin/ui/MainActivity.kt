@@ -19,6 +19,8 @@ import com.ingeint.checkin.ui.about.AboutScreen
 import com.ingeint.checkin.ui.child.ChildScreen
 import com.ingeint.checkin.ui.child.ChildViewModel
 import com.ingeint.checkin.ui.diagnostics.DiagnosticsScreen
+import com.ingeint.checkin.ui.parent.InsulinScreen
+import com.ingeint.checkin.ui.parent.InsulinViewModel
 import com.ingeint.checkin.ui.parent.ParentHomeScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsViewModel
@@ -38,6 +40,7 @@ private object Routes {
     const val PARENT_SETTINGS = "parent_settings/{childName}"
     const val DIAGNOSTICS = "diagnostics/{role}"
     const val ABOUT = "about"
+    const val INSULIN_CALENDAR = "insulin_calendar"
 
     fun permissions(role: String, childName: String) = "permissions/$role/$childName"
 
@@ -111,7 +114,16 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
         composable(Routes.PARENT_HOME) { backStackEntry ->
             val childName = backStackEntry.arguments?.getString("childName") ?: ""
             val viewModel: ParentViewModel = viewModel(factory = AppViewModelFactory(container) { ParentViewModel(it) })
-            ParentHomeScreen(viewModel, onOpenSettings = { navController.navigate(Routes.parentSettings(childName)) })
+            ParentHomeScreen(
+                viewModel,
+                onOpenSettings = { navController.navigate(Routes.parentSettings(childName)) },
+                onOpenInsulin = { navController.navigate(Routes.INSULIN_CALENDAR) },
+            )
+        }
+
+        composable(Routes.INSULIN_CALENDAR) {
+            val viewModel: InsulinViewModel = viewModel(factory = AppViewModelFactory(container) { InsulinViewModel(it) })
+            InsulinScreen(viewModel, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.PARENT_SETTINGS) { backStackEntry ->

@@ -79,6 +79,9 @@ Para cada familia con `settings.enabled == true` y `childUid`:
 - `computeDay(settings, checkins[], now) → DayDoc` es **pura**, vive en `compliance.ts` y usa `schedule.ts`.
 - `recomputeDay(fid, date)` hace el I/O (en `events.ts`/`missed.ts`): lee las revisiones del día con `realAt` dentro de la fecha local, llama a `computeDay` y escribe `days/{fecha}` preservando `missedAlerted` y `summarySent`.
 
+### Insulina por día (`insulin.ts`, pedido 2026-09-27)
+Cada `insulin_dose` suma a `days/{fecha}.insulin = { total, doses: [{ eventId, atMillis, units }] }` con `set(..., {merge:true})` + `FieldValue.increment`/`arrayUnion` — no pasa por `computeDay`/`recomputeDay` (es aditivo, no depende del horario de slots). La app del padre lo lee para el calendario de insulina.
+
 ## Mensajería (`messaging.ts`)
 - `sendToParents(fid, payload, excludeUid?)`: usa las claves de `families.parents` para leer `users/{uid}.fcmToken`. `sendToChild(fid, payload)`: usa **solo** `families.childUid`. Ambos envían con `sendEachForMulticast`.
 - Si FCM responde `registration-token-not-registered`, se borra `fcmToken` de ese usuario (es la única señal de "este token ya no existe, para siempre", según la propia documentación de FCM). `invalid-argument` **no** borra el token: puede salir de un token recién creado que todavía no terminó de propagarse, o de un payload inválido — borrar el token ahí dejaría al usuario sin push hasta que la app se reabra sin arreglar la causa real.
