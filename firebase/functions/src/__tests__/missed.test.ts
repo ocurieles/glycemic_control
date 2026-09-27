@@ -107,4 +107,29 @@ describe.runIf(canRun)("processFamily (checkMissedSlots, integración con el emu
     const day = (await db.doc(`families/${familyId}/days/${todayKey}`).get()).data()!;
     expect(["on_time", "late"]).toContain(day.slots[nowHhmm]?.status);
   });
+
+  it("recomputeDay (vía processFamily) preserva el campo insulin del día (bug real 2026-09-27)", async () => {
+    const familyId = `fam-insulin-preserve-${Date.now()}`;
+    await db.doc(`families/${familyId}`).set({
+      childName: "Cesar",
+      childUid: "child1",
+      parents: {},
+      settings,
+      createdAt: Timestamp.now(),
+    });
+
+    const todayKey = DateTime.now().setZone(settings.timezone).toFormat("yyyy-MM-dd");
+    // Simula lo que escribe insulin.ts antes de que corra cualquier recompute.
+    await db.doc(`families/${familyId}/days/${todayKey}`).set(
+      { insulin: { total: 1.5, doses: [{ eventId: "e-dose1", atMillis: Date.now(), units: 1.5 }] } },
+      { merge: true },
+    );
+
+    const family = (await db.doc(`families/${familyId}`).get()).data()!;
+    await processFamily(familyId, family, settings);
+
+    const day = (await db.doc(`families/${familyId}/days/${todayKey}`).get()).data()!;
+    expect(day.insulin?.total).toBe(1.5);
+    expect(day.insulin?.doses).toHaveLength(1);
+  });
 });

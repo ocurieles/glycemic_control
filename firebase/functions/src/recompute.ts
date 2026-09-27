@@ -36,12 +36,19 @@ export async function recomputeDay(familyId: string, dateKey: string, settings: 
   const existing = await dayRef.get();
   const missedAlerted = (existing.data()?.missedAlerted as string[] | undefined) ?? [];
   const summarySent = (existing.data()?.summarySent as boolean | undefined) ?? false;
+  // `{ merge: false }` reescribe TODO el documento — sin esto, cada recompute (cada
+  // revisión, y cada 5 min por checkMissedSlots) borraba silenciosamente el campo
+  // `insulin` que escribe insulin.ts en el mismo documento (bug real 2026-09-27: el
+  // calendario de insulina "desaparecía" solo después de un rato). Se preserva igual
+  // que `missedAlerted`/`summarySent`.
+  const insulin = existing.data()?.insulin;
 
   await dayRef.set(
     {
       ...computed,
       missedAlerted,
       summarySent,
+      ...(insulin !== undefined ? { insulin } : {}),
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: false },

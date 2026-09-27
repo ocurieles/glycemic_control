@@ -87,6 +87,14 @@ fun ParentSettingsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
             OutlinedButton(onClick = onOpenAbout) { Text(stringResource(R.string.parent_settings_about)) }
         }
+
+        // TEMPORAL (2026-09-27 → quitar tras usarlo): reconstruye el calendario de
+        // insulina dañado por un bug real ya arreglado (recomputeDay borraba el campo).
+        item {
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = viewModel::backfillInsulinDays) { Text("Reparar calendario de insulina") }
+            state.insulinBackfillMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        }
     }
 }
 

@@ -66,6 +66,10 @@ class FunctionsApi(private val functions: FirebaseFunctions) {
         call<Unit>("removeLibreLinkUp", emptyMap()) {}
     }
 
+    /** TEMPORAL (2026-09-27 → quitar tras usarla): reconstruye el calendario de insulina. */
+    suspend fun backfillInsulinDays(): Int =
+        call("backfillInsulinDays", emptyMap()) { data -> (data["daysFixed"] as Number).toInt() }
+
     @Suppress("UNCHECKED_CAST")
     private suspend fun <T> call(name: String, data: Map<String, Any?>, map: (Map<String, Any?>) -> T): T {
         try {

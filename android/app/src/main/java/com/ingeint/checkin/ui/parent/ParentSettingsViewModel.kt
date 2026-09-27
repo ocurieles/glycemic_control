@@ -20,6 +20,7 @@ data class ParentSettingsUiState(
     val pairingCode: String? = null,
     val libreMessage: String? = null,
     val leftFamily: Boolean = false,
+    val insulinBackfillMessage: String? = null,
 )
 
 /**
@@ -112,6 +113,15 @@ class ParentSettingsViewModel(private val container: AppContainer) : ViewModel()
                     _state.value = _state.value.copy(leftFamily = true)
                 }
                 .onFailure { _state.value = _state.value.copy(errorMessage = it.message ?: "No se pudo desvincular.") }
+        }
+    }
+
+    /** TEMPORAL (2026-09-27 → quitar tras usarla): reconstruye el calendario de insulina. */
+    fun backfillInsulinDays() {
+        viewModelScope.launch {
+            runCatching { container.functionsApi.backfillInsulinDays() }
+                .onSuccess { daysFixed -> _state.value = _state.value.copy(insulinBackfillMessage = "Reconstruidos $daysFixed día(s).") }
+                .onFailure { _state.value = _state.value.copy(insulinBackfillMessage = it.message ?: "No se pudo reconstruir.") }
         }
     }
 
