@@ -108,6 +108,15 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
 
 @Composable
 private fun QuickLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDismiss: () -> Unit) {
+    // Bug real reportado 2026-09-27: el diálogo se quedaba abierto tras elegir una
+    // dosis y solo cambiaba un texto chico ("Registrado ✓") — parecía que no había
+    // pasado nada, así que se cierra solo apenas se confirma.
+    LaunchedEffect(doseLogged) {
+        if (doseLogged) {
+            delay(600)
+            onDismiss()
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.child_quick_log_title)) },

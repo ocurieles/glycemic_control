@@ -3,6 +3,7 @@ package com.ingeint.checkin.ui.child
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +35,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val ES_VE = Locale.Builder().setLanguage("es").setRegion("VE").build()
+private const val TAG = "ChildViewModel"
 
 enum class CheckinStatus { NONE, PENDING, SENT }
 
@@ -135,13 +137,15 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             val clientAt = container.prefs.correctedNowMillis()
             val offset = container.prefs.clockOffsetMs.first()
-            container.outboxRepository.record(
-                type = OutboxEventType.INSULIN_DOSE,
-                clientAtMillis = clientAt,
-                clockOffsetMs = offset,
-                source = "app",
-                doseUnits = units,
-            )
+            val event =
+                container.outboxRepository.record(
+                    type = OutboxEventType.INSULIN_DOSE,
+                    clientAtMillis = clientAt,
+                    clockOffsetMs = offset,
+                    source = "app",
+                    doseUnits = units,
+                )
+            Log.i(TAG, "registro rápido guardado en outbox: id=${event.id} units=$units")
             SyncWorker.enqueue(context)
             _state.value = _state.value.copy(doseLogged = true)
             delay(2_000)

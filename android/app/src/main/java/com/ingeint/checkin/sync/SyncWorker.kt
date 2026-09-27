@@ -86,8 +86,10 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     syncedCount++
                     if (firstSyncedEventId == null) firstSyncedEventId = event.id
                     if (repository.wasRecordedRecently(event)) anyRecentUserInitiated = true
+                    Log.i(TAG, "subido: id=${event.id} type=${event.type}")
                 }
                 is UploadResult.PermissionDenied -> {
+                    Log.w(TAG, "PERMISSION_DENIED: id=${event.id} type=${event.type} rejected=${outcome.rejected} msg=${outcome.message}")
                     if (outcome.rejected) {
                         repository.markRejected(event, outcome.message)
                     } else {
@@ -96,6 +98,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                     }
                 }
                 is UploadResult.Retry -> {
+                    Log.w(TAG, "reintentar: id=${event.id} type=${event.type} msg=${outcome.message}")
                     repository.markRetry(event, outcome.message)
                     anyNeedsRetry = true
                 }
