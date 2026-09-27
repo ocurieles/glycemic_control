@@ -95,6 +95,13 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
         IconButton(onClick = { showQuickLog = true }, modifier = Modifier.padding(8.dp).align(Alignment.TopStart)) {
             Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.child_quick_log_button))
         }
+
+        // Pedido 2026-09-27: aparece grande un momento tras revisarse (para que Cesar lo
+        // note de verdad), y luego se queda chico como histórico en CheckinStatusText.
+        val glucoseValue = state.lastCheckinGlucoseValueMgDl
+        if (state.showGlucosePopup && glucoseValue != null) {
+            GlucosePopup(glucoseValue, state.lastCheckinGlucoseTrend)
+        }
     }
 
     if (showQuickLog) {
@@ -143,6 +150,26 @@ private fun QuickLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDism
 
 /** Mismas flechas que el backend (`TREND_ARROWS` de `messages.ts`, docs/04). */
 private val TREND_ARROWS = mapOf(1L to "↓", 2L to "↘", 3L to "→", 4L to "↗", 5L to "↑")
+
+/** Grande y momentáneo (3 s), pedido 2026-09-27 — luego queda chico como histórico. */
+@Composable
+private fun GlucosePopup(value: Long, trend: Long?) {
+    val arrow = TREND_ARROWS[trend] ?: ""
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            "$value $arrow",
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.onPrimary,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 @Composable
 private fun CheckinStatusText(state: ChildUiState) {

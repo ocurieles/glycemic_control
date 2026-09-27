@@ -53,6 +53,9 @@ data class ChildUiState(
      */
     val lastCheckinGlucoseValueMgDl: Long? = null,
     val lastCheckinGlucoseTrend: Long? = null,
+    /** Pedido 2026-09-27: el valor aparece grande un momento (para que Cesar lo note de
+     * verdad) y luego se queda chico, como histórico, en [lastCheckinGlucoseValueMgDl]. */
+    val showGlucosePopup: Boolean = false,
     val doseLogged: Boolean = false,
 )
 
@@ -120,12 +123,17 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
                     .addSnapshotListener { snap, _ ->
                         @Suppress("UNCHECKED_CAST")
                         val glucose = snap?.get("glucose") as? Map<String, Any?>
-                        if (glucose != null) {
+                        if (glucose != null && _state.value.lastCheckinGlucoseValueMgDl == null) {
                             _state.value =
                                 _state.value.copy(
                                     lastCheckinGlucoseValueMgDl = (glucose["valueMgDl"] as? Number)?.toLong(),
                                     lastCheckinGlucoseTrend = (glucose["trend"] as? Number)?.toLong(),
+                                    showGlucosePopup = true,
                                 )
+                            viewModelScope.launch {
+                                delay(3_000)
+                                _state.value = _state.value.copy(showGlucosePopup = false)
+                            }
                         }
                     }
         }
