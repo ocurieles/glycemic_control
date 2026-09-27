@@ -214,7 +214,11 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
     private fun updateCheckinState(events: List<OutboxEvent>) {
         val checkins = events.filter { it.type == OutboxEventType.CHECKIN }
         val pending = checkins.count { it.status == OutboxStatus.PENDING }
-        val last = checkins.maxByOrNull { it.clientAt }
+        // `recordedAt` (cuándo se tocó el botón en ESTE dispositivo), no `clientAt` (la
+        // hora "corregida" con el desfase de reloj, que puede estar mal si el desfase se
+        // calculó mal — ver el bug real de SyncWorker.kt 2026-09-27): así la pantalla
+        // siempre refleja el toque más reciente, nunca uno viejo con un valor corrupto.
+        val last = checkins.maxByOrNull { it.recordedAt }
         val status =
             when (last?.status) {
                 OutboxStatus.SENT -> CheckinStatus.SENT

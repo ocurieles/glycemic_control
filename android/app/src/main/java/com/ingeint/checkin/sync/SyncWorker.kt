@@ -73,7 +73,14 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         var anyRecentUserInitiated = false
         var syncedCount = 0
-        var firstSyncedEventId: String? = null
+        // El desfase de reloj SOLO se recalcula desde un evento recién creado en este
+        // mismo dispositivo (bug real reportado 2026-09-27): antes se usaba "el primer
+        // evento subido en este lote", que con un outbox atascado (o simplemente offline
+        // un rato) podía ser un evento de HORAS atrás. Usarlo para "createdAt − clientAt"
+        // calculaba un desfase gigante y falso, que quedaba aplicado a todos los toques
+        // nuevos hasta la siguiente sincronización — mostrando una hora incorrecta al
+        // tocar "Ya me revisé".
+        var mostRecentSyncedEvent: OutboxEvent? = null
         // Si un evento falla, no debe bloquear a los que vienen detrás en el mismo lote
         // (bug real reportado 2026-09-27: uno atascado dejaba a todos los demás sin
         // subir, indefinidamente). Se sigue con el resto y se reintenta solo lo que falló.
@@ -84,7 +91,10 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 UploadResult.Success -> {
                     repository.markSent(event)
                     syncedCount++
-                    if (firstSyncedEventId == null) firstSyncedEventId = event.id
+                    val current = mostRecentSyncedEvent
+                    if (current == null || event.recordedAt > current.recordedAt) {
+                        mostRecentSyncedEvent = event
+                    }
                     if (repository.wasRecordedRecently(event)) anyRecentUserInitiated = true
                     Log.i(TAG, "subido: id=${event.id} type=${event.type}")
                 }
@@ -111,7 +121,11 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
             Haptics.vibrate(applicationContext, VibrationPattern.CONFIRM)
         }
 
-        firstSyncedEventId?.let { id -> updateClockOffset(container, familyId, batch.first { it.id == id }) }
+        mostRecentSyncedEvent?.let { event ->
+            if (repository.wasRecordedRecently(event, withinMs = 300_000L)) {
+                updateClockOffset(container, familyId, event)
+            }
+        }
 
         Log.i(TAG, "sincronizados $syncedCount evento(s)")
 
