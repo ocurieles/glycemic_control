@@ -207,6 +207,22 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("rechaza un insulin_dose que no es múltiplo de 0.5 (p. ej. 1.2)", async () => {
+    await seedFamily();
+    await assertFails(
+      asChild()
+        .doc(`families/${FAMILY_ID}/events/e-dose-bad-step`)
+        .set({
+          type: "insulin_dose",
+          createdBy: CHILD_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+          doseUnits: 1.2,
+        }),
+    );
+  });
+
   it("rechaza un insulin_dose sin doseUnits", async () => {
     await seedFamily();
     await assertFails(

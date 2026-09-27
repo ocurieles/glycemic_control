@@ -61,8 +61,16 @@ service cloud.firestore {
           && (!('text' in request.resource.data) || request.resource.data.text.size() <= 120)
           && (!('clockOffsetMs' in request.resource.data) || (request.resource.data.clockOffsetMs is int
                && request.resource.data.clockOffsetMs >= -604800000 && request.resource.data.clockOffsetMs <= 604800000))
+          // Comparado con aritmética, no con `in [...]`: la app siempre manda `doseUnits`
+          // como número de coma flotante (Double), aunque el valor sea entero (p. ej. 1
+          // U) — una lista de literales mixtos enteros/flotantes puede no igualar por
+          // tipo exacto (bug real encontrado 2026-09-27: la dosis nunca llegaba a
+          // Firestore). Esto acepta cualquier número, entero o flotante, en pasos de
+          // 0.5 entre 0.5 y 3.
           && (request.resource.data.type != 'insulin_dose'
-               || request.resource.data.doseUnits in [0.5, 1, 1.5, 2, 2.5, 3]);
+               || (request.resource.data.doseUnits is float || request.resource.data.doseUnits is int)
+               && request.resource.data.doseUnits >= 0.5 && request.resource.data.doseUnits <= 3
+               && (request.resource.data.doseUnits * 2) == math.round(request.resource.data.doseUnits * 2));
         // update/delete: solo Functions (Admin SDK)
       }
 
