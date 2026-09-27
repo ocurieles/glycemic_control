@@ -74,6 +74,10 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         var anyRecentUserInitiated = false
         var syncedCount = 0
         var firstSyncedEventId: String? = null
+        // Si un evento falla, no debe bloquear a los que vienen detrás en el mismo lote
+        // (bug real reportado 2026-09-27: uno atascado dejaba a todos los demás sin
+        // subir, indefinidamente). Se sigue con el resto y se reintenta solo lo que falló.
+        var anyNeedsRetry = false
 
         for (event in batch) {
             when (val outcome = uploadOne(container, familyId, event)) {
@@ -88,12 +92,12 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                         repository.markRejected(event, outcome.message)
                     } else {
                         repository.markRetry(event, outcome.message)
-                        return Result.retry()
+                        anyNeedsRetry = true
                     }
                 }
                 is UploadResult.Retry -> {
                     repository.markRetry(event, outcome.message)
-                    return Result.retry()
+                    anyNeedsRetry = true
                 }
             }
         }
@@ -108,8 +112,8 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
 
         Log.i(TAG, "sincronizados $syncedCount evento(s)")
 
-        // Si el lote se llenó, probablemente queden más: se reintenta pronto.
-        return if (batch.size >= BATCH_SIZE) Result.retry() else Result.success()
+        // Se reintenta si algo falló, o si el lote se llenó (probablemente queden más).
+        return if (anyNeedsRetry || batch.size >= BATCH_SIZE) Result.retry() else Result.success()
     }
 
     private suspend fun uploadOne(

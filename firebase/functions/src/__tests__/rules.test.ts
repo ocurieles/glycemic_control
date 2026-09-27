@@ -173,6 +173,24 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("el niño puede crear un insulin_dose con una dosis entera (1, 2, 3 U)", async () => {
+    await seedFamily();
+    for (const [i, dose] of [1, 2, 3].entries()) {
+      await assertSucceeds(
+        asChild()
+          .doc(`families/${FAMILY_ID}/events/e-dose-int-${i}`)
+          .set({
+            type: "insulin_dose",
+            createdBy: CHILD_UID,
+            createdAt: serverTimestamp(),
+            clientAt: Timestamp.now(),
+            source: "app",
+            doseUnits: dose,
+          }),
+      );
+    }
+  });
+
   it("rechaza un insulin_dose con una dosis fuera de las permitidas", async () => {
     await seedFamily();
     await assertFails(
