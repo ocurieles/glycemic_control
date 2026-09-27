@@ -39,7 +39,10 @@ export type PushType = keyof typeof PUSH_TTL_SECONDS;
 async function sendToTokens(uidToToken: Map<string, string>, type: PushType, payload: PushPayload): Promise<void> {
   const uids = [...uidToToken.keys()];
   const tokens = [...uidToToken.values()];
-  if (tokens.length === 0) return;
+  if (tokens.length === 0) {
+    logger.info("sin token(es) FCM, no se manda push", { type, uids });
+    return;
+  }
 
   const response = await getMessaging().sendEachForMulticast({
     tokens,
@@ -49,7 +52,10 @@ async function sendToTokens(uidToToken: Map<string, string>, type: PushType, pay
 
   const staleUids: string[] = [];
   response.responses.forEach((r, i) => {
-    if (r.success) return;
+    if (r.success) {
+      logger.info("push enviado", { uid: uids[i], type });
+      return;
+    }
     const code = r.error?.code;
     logger.info("push failed", { uid: uids[i], type, code, errorMessage: r.error?.message });
     if (code && INVALID_TOKEN_ERRORS.has(code)) staleUids.push(uids[i]);

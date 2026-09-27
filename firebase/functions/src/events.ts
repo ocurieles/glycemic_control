@@ -43,6 +43,8 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
 
   const senderName = await resolveSenderName(data.createdBy as string, family);
 
+  logger.info("onEventCreated: procesando", { familyId, eventId, type: data.type });
+
   async function lookupGlucose(): Promise<{ glucose?: GlucoseInfo; glucoseError?: string }> {
     const result = await lookupGlucoseForEvent(familyId, clientAt, settings, lluAppVersion.value(), lluEncKey.value());
     return result.glucose ? { glucose: result.glucose } : { glucoseError: result.error };
@@ -110,9 +112,11 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
     case "insulin_dose": {
       await snap.ref.update(baseUpdate);
       const doseUnits = data.doseUnits as number;
-      await addInsulinDose(familyId, dateKeyOf(realAtMs, settings.timezone), eventId, realAtMs, doseUnits);
+      const dateKey = dateKeyOf(realAtMs, settings.timezone);
+      await addInsulinDose(familyId, dateKey, eventId, realAtMs, doseUnits);
       const { title, body } = formatInsulinDoseMessage(childName, doseUnits, realAtMs);
       await sendToParents(familyId, "insulin_dose", { title, body, eventId });
+      logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits });
       break;
     }
     case "sos_ack": {
