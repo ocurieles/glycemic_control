@@ -197,7 +197,12 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                 container.firestore.collection("families").document(familyId).collection("events").document(event.id)
             val snap = withTimeout(UPLOAD_TIMEOUT_MS) { docRef.get(Source.SERVER).await() }
             val createdAt = snap.getTimestamp("createdAt") ?: return
-            val offset = createdAt.toDate().time - event.clientAt
+            // `event.recordedAt` (reloj crudo del dispositivo al tocar el botón), NO
+            // `event.clientAt` (bug real 2026-09-27: `clientAt` ya tiene aplicado el
+            // desfase ANTERIOR — usarlo para calcular el desfase nuevo hace que cada
+            // corrección se sume sobre la anterior en vez de medir el desfase real
+            // contra el reloj del servidor, y nunca converge a la hora correcta).
+            val offset = createdAt.toDate().time - event.recordedAt
             container.prefs.saveClockOffsetMs(offset)
         }.onFailure { Log.w(TAG, "no se pudo actualizar clockOffsetMs", it) }
     }
