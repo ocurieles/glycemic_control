@@ -11,19 +11,86 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-// docs/06: "colores sobrios en la UI del niño". Paleta neutra, sin urgencia visual salvo SOS.
-private val Primary = Color(0xFF1565C0)
-private val PrimaryDark = Color(0xFF90CAF9)
+/**
+ * Paleta de marca (ingeint.com): azul marino, naranja y verde lima. docs/06 pide
+ * "colores sobrios en la UI del niño, sin urgencia visual salvo SOS" — por eso el
+ * marino (sobrio) queda como `primary` en toda la app, y el naranja/lima quedan como
+ * acentos secundarios/terciarios que el rol niño casi no usa.
+ */
+private val Navy = Color(0xFF05213E)
+private val NavyContainer = Color(0xFF1B3A5C)
+private val Orange = Color(0xFFF05A3A)
+private val Lime = Color(0xFFC2DA65)
 
 private val LightColors =
-    lightColorScheme(primary = Primary, secondary = Color(0xFF546E7A))
+    lightColorScheme(
+        primary = Navy,
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = NavyContainer,
+        onPrimaryContainer = Color(0xFFFFFFFF),
+        secondary = Orange,
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFFFDBCF),
+        onSecondaryContainer = Color(0xFF5C1D0A),
+        tertiary = Color(0xFF5C6E24),
+        onTertiary = Color(0xFFFFFFFF),
+        tertiaryContainer = Lime,
+        onTertiaryContainer = Color(0xFF283405),
+        background = Color(0xFFF9FAFB),
+        onBackground = Color(0xFF13212E),
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF13212E),
+        // Sin esto, los roles neutros (tarjetas, contenedores) quedan en el gris
+        // violeta por defecto de Material — no combina con marino/naranja/lima.
+        surfaceVariant = Color(0xFFE3E7EB),
+        onSurfaceVariant = Color(0xFF44474C),
+        outline = Color(0xFF74777C),
+        outlineVariant = Color(0xFFC4C7CC),
+        surfaceContainerLowest = Color(0xFFFFFFFF),
+        surfaceContainerLow = Color(0xFFF3F4F6),
+        surfaceContainer = Color(0xFFEDEEF1),
+        surfaceContainerHigh = Color(0xFFE7E9EC),
+        surfaceContainerHighest = Color(0xFFE2E3E6),
+        inverseSurface = Color(0xFF2B3033),
+        inverseOnSurface = Color(0xFFF1F0F3),
+        inversePrimary = Color(0xFF9DC2EE),
+    )
 private val DarkColors =
-    darkColorScheme(primary = PrimaryDark, secondary = Color(0xFFB0BEC5))
+    darkColorScheme(
+        primary = Color(0xFF9DC2EE),
+        onPrimary = Color(0xFF0A2540),
+        primaryContainer = NavyContainer,
+        onPrimaryContainer = Color(0xFFD3E4FF),
+        secondary = Color(0xFFFFB59D),
+        onSecondary = Color(0xFF5C1D0A),
+        secondaryContainer = Color(0xFF7A2A10),
+        onSecondaryContainer = Color(0xFFFFDBCF),
+        tertiary = Lime,
+        onTertiary = Color(0xFF2E3A08),
+        tertiaryContainer = Color(0xFF44540F),
+        onTertiaryContainer = Color(0xFFDDF08F),
+        background = Color(0xFF0E1A26),
+        onBackground = Color(0xFFE1E2E5),
+        surface = Color(0xFF13212E),
+        onSurface = Color(0xFFE1E2E5),
+        surfaceVariant = Color(0xFF43474E),
+        onSurfaceVariant = Color(0xFFC4C7CC),
+        outline = Color(0xFF8E9199),
+        outlineVariant = Color(0xFF43474E),
+        surfaceContainerLowest = Color(0xFF0B1219),
+        surfaceContainerLow = Color(0xFF161F27),
+        surfaceContainer = Color(0xFF1A232B),
+        surfaceContainerHigh = Color(0xFF252E36),
+        surfaceContainerHighest = Color(0xFF303941),
+        inverseSurface = Color(0xFFE2E3E6),
+        inverseOnSurface = Color(0xFF2B3033),
+        inversePrimary = Color(0xFF05213E),
+    )
 
 @Composable
 fun CheckinTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme =

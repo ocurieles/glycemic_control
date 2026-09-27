@@ -3,7 +3,6 @@ package com.ingeint.checkin.ui.parent
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -21,12 +22,16 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,32 +49,34 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(state.childName, style = MaterialTheme.typography.headlineSmall)
-                    Row {
-                        IconButton(onClick = onOpenInsulin) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.parent_insulin_calendar_title))
-                        }
-                        IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_icon_description))
-                        }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(state.childName) },
+                actions = {
+                    IconButton(onClick = onOpenInsulin) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.parent_insulin_calendar_title))
                     }
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_icon_description))
+                    }
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+            )
+        },
+    ) { padding ->
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             state.activeSos?.let { sos ->
                 item {
                     SosBanner(sos, state.childName, state.childPhone, onGoing = { viewModel.ackSos(sos.eventId) })
@@ -114,7 +121,10 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
 @Composable
 private fun SosBanner(sos: ActiveSos, childName: String, childPhone: String?, onGoing: () -> Unit) {
     val context = LocalContext.current
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 stringResource(R.string.parent_banner_sos_title, childName),
@@ -136,7 +146,7 @@ private fun SosBanner(sos: ActiveSos, childName: String, childPhone: String?, on
 
 @Composable
 private fun ComplianceCard(compliance: DayCompliance?) {
-    Card {
+    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.parent_compliance_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -163,7 +173,7 @@ private fun ComplianceCard(compliance: DayCompliance?) {
 private fun LocationCard(childName: String, lastLocation: LastLocation?, pending: Boolean, onRequest: () -> Unit) {
     val context = LocalContext.current
     val esVe = remember { Locale.Builder().setLanguage("es").setRegion("VE").build() }
-    Card {
+    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.parent_location_title, childName), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
@@ -200,10 +210,13 @@ private fun QuickMessages(onSend: (String) -> Unit) {
     Column {
         Text(stringResource(R.string.parent_quick_messages_title), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(onClick = { onSend(reminderText) }, label = { Text(reminderText) })
-            AssistChip(onClick = { onSend(okText) }, label = { Text(okText) })
-            AssistChip(onClick = { onSend(goingText) }, label = { Text(goingText) })
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        ) {
+            AssistChip(onClick = { onSend(reminderText) }, label = { Text(reminderText, maxLines = 1) })
+            AssistChip(onClick = { onSend(okText) }, label = { Text(okText, maxLines = 1) })
+            AssistChip(onClick = { onSend(goingText) }, label = { Text(goingText, maxLines = 1) })
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -232,6 +245,7 @@ private fun TimelineRow(event: TimelineEvent) {
             "parent_message" -> stringResource(R.string.parent_event_parent_message)
             "sos_ack" -> stringResource(R.string.parent_event_sos_ack)
             "insulin_dose" -> stringResource(R.string.parent_event_insulin_dose)
+            "location_request", "location_response" -> stringResource(R.string.parent_event_location)
             else -> event.type
         }
     val esVe = remember { Locale.Builder().setLanguage("es").setRegion("VE").build() }

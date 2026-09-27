@@ -133,6 +133,7 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
             ParentSettingsScreen(
                 viewModel,
                 childName = childName,
+                onBack = { navController.popBackStack() },
                 onLeftFamily = {
                     navController.navigate(Routes.SETUP) { popUpTo(0) { inclusive = true } }
                 },

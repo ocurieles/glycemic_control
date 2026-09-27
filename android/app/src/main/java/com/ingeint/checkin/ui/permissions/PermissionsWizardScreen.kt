@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -184,9 +185,10 @@ fun PermissionsWizardScreen(role: String, onContinue: () -> Unit) {
             val granted = item.isGranted(context)
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(modifier = Modifier.padding(end = 8.dp)) {
+                Column(modifier = Modifier.padding(end = 8.dp).weight(1f)) {
                     Text(stringResource(item.titleRes), style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(item.descRes), style = MaterialTheme.typography.bodySmall)
                 }
