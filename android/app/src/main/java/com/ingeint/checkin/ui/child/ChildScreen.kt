@@ -155,10 +155,11 @@ private fun CheckinStatusText(state: ChildUiState) {
     text?.let { Text(it, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
 
     // Solo aparece DESPUÉS de tocar el botón (docs/01, pedido 2026-09-24): nunca antes,
-    // nunca en una notificación — solo dentro de la app, en este mismo lugar.
+    // nunca en una notificación — solo dentro de la app, en este mismo lugar. Mismo
+    // tamaño que "Próximo recordatorio" (pedido 2026-09-27).
     state.lastCheckinGlucoseValueMgDl?.let { value ->
         val arrow = TREND_ARROWS[state.lastCheckinGlucoseTrend] ?: ""
-        Text("$value $arrow", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+        Text("$value $arrow", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
     }
 }
 
