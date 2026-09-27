@@ -2,6 +2,8 @@ package com.ingeint.checkin.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -85,6 +87,20 @@ private val DarkColors =
         inverseSurface = Color(0xFFE2E3E6),
         inverseOnSurface = Color(0xFF2B3033),
         inversePrimary = Color(0xFF05213E),
+    )
+
+/**
+ * Botón de acción principal para las pantallas del padre (naranja de ingeint.com):
+ * el `Button` de M3 usa `primary` (marino) por defecto, y dejaba toda la app "azul"
+ * sin que el naranja de marca se viera en ningún lado visible (pedido 2026-09-27,
+ * tras verlo instalado: "sigo viendo todo azul"). No se usa en pantallas del niño:
+ * ahí el marino sobrio de `primary` sigue siendo el correcto (docs/06).
+ */
+@Composable
+fun brandButtonColors(): ButtonColors =
+    ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.secondary,
+        contentColor = MaterialTheme.colorScheme.onSecondary,
     )
 
 @Composable

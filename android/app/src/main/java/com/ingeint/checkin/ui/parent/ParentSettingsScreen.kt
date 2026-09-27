@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ingeint.checkin.R
 import com.ingeint.checkin.data.model.ReminderSettings
+import com.ingeint.checkin.ui.theme.brandButtonColors
 
 private val DAY_LABELS =
     listOf(
@@ -91,7 +92,7 @@ fun ParentSettingsScreen(
 
             item {
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { viewModel.save(draft) }, enabled = !state.loading) {
+                Button(onClick = { viewModel.save(draft) }, enabled = !state.loading, colors = brandButtonColors()) {
                     Text(stringResource(R.string.parent_settings_save))
                 }
                 state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -261,7 +262,11 @@ private fun LibreLinkUpSection(viewModel: ParentSettingsViewModel, state: Parent
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { viewModel.connectLibreLinkUp(email, password) }, enabled = !state.loading) {
+            Button(
+                onClick = { viewModel.connectLibreLinkUp(email, password) },
+                enabled = !state.loading,
+                colors = brandButtonColors(),
+            ) {
                 Text(stringResource(R.string.parent_settings_libre_connect))
             }
             OutlinedButton(onClick = viewModel::testLibreLinkUp, enabled = !state.loading) {

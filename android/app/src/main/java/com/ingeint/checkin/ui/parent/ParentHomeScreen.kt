@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ingeint.checkin.R
+import com.ingeint.checkin.ui.theme.brandButtonColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -133,11 +134,14 @@ private fun SosBanner(sos: ActiveSos, childName: String, childPhone: String?, on
             )
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onGoing) { Text(stringResource(R.string.parent_banner_sos_going)) }
+                Button(onClick = onGoing, colors = brandButtonColors()) {
+                    Text(stringResource(R.string.parent_banner_sos_going))
+                }
                 if (childPhone != null) {
-                    Button(onClick = {
-                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$childPhone")))
-                    }) { Text(stringResource(R.string.parent_banner_sos_call, childName)) }
+                    Button(
+                        onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$childPhone"))) },
+                        colors = brandButtonColors(),
+                    ) { Text(stringResource(R.string.parent_banner_sos_call, childName)) }
                 }
             }
         }
@@ -189,12 +193,17 @@ private fun LocationCard(childName: String, lastLocation: LastLocation?, pending
             }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onRequest, enabled = !pending) { Text(stringResource(R.string.parent_location_request)) }
+                Button(onClick = onRequest, enabled = !pending, colors = brandButtonColors()) {
+                    Text(stringResource(R.string.parent_location_request))
+                }
                 if (lastLocation != null) {
-                    Button(onClick = {
-                        val uri = Uri.parse("geo:${lastLocation.lat},${lastLocation.lng}?q=${lastLocation.lat},${lastLocation.lng}")
-                        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    }) { Text(stringResource(R.string.parent_location_view)) }
+                    Button(
+                        onClick = {
+                            val uri = Uri.parse("geo:${lastLocation.lat},${lastLocation.lng}?q=${lastLocation.lat},${lastLocation.lng}")
+                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        },
+                        colors = brandButtonColors(),
+                    ) { Text(stringResource(R.string.parent_location_view)) }
                 }
             }
         }
@@ -228,7 +237,9 @@ private fun QuickMessages(onSend: (String) -> Unit) {
                 singleLine = true,
             )
             Spacer(Modifier.width(8.dp))
-            Button(onClick = { onSend(text); text = "" }) { Text(stringResource(R.string.parent_quick_message_send)) }
+            Button(onClick = { onSend(text); text = "" }, colors = brandButtonColors()) {
+                Text(stringResource(R.string.parent_quick_message_send))
+            }
         }
     }
 }

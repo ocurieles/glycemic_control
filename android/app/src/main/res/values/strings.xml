@@ -109,4 +109,5 @@
     <string name="about_safety_title">Aviso de seguridad</string>
     <string name="about_safety_body">Esta app es una ayuda de comunicación y de hábitos. No sustituye las alarmas de LibreLink/LibreLinkUp ni las indicaciones médicas. Las alarmas de hipoglucemia e hiperglucemia deben seguir activas en LibreLinkUp.</string>
     <string name="about_not_a_medical_device">No es un dispositivo médico ni reemplaza al sensor.</string>
+    <string name="about_developed_by">Producto desarrollado por INGEINT C.A.</string>
 </resources>
