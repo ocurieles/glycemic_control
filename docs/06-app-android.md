@@ -68,6 +68,7 @@ POST_NOTIFICATIONS, VIBRATE, RECEIVE_BOOT_COMPLETED, INTERNET, ACCESS_NETWORK_ST
 USE_EXACT_ALARM (API 33+), SCHEDULE_EXACT_ALARM (maxSdkVersion 32),
 REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, WAKE_LOCK, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC,
 ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION  (niño, opcional),
+ACCESS_BACKGROUND_LOCATION                     (niño, opcional; feature "¿Dónde está Cesar?", pedido 2026-09-27),
 SEND_SMS                                       (niño, solo si smsFallbackEnabled),
 USE_FULL_SCREEN_INTENT, ACCESS_NOTIFICATION_POLICY (padres)
 ```
@@ -78,7 +79,8 @@ En el manifest, sobrescribir el `SystemForegroundService` de WorkManager con `to
 ### Optimización de batería (crítico)
 - Se pide `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` al vincular.
 - Se muestra una guía por fabricante (detectado con `Build.MANUFACTURER`) con pasos para **Xiaomi/Redmi/POCO** (inicio automático, ahorro de batería "Sin restricciones"), **Samsung** (Aplicaciones que nunca se suspenden), **Huawei**, **Oppo/Realme**, **Vivo** y **Tecno/Infinix**, que son comunes en Venezuela. Referencia: dontkillmyapp.com.
-- La pantalla de diagnóstico del niño muestra un check por permiso: notificaciones, alarmas exactas, batería sin restricción, ubicación y SMS. En rojo si falta alguno.
+- La pantalla de diagnóstico del niño muestra un check por permiso: notificaciones, alarmas exactas, batería sin restricción, ubicación, ubicación en segundo plano ("todo el tiempo", solo API ≥ 29) y SMS. En rojo si falta alguno.
+- Ubicación en segundo plano: Android 11+ no permite pedirla junto con el permiso de primer plano en un solo diálogo; el asistente primero pide `ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION` (si falta) y luego, ya con eso concedido, pide `ACCESS_BACKGROUND_LOCATION` por separado — el sistema redirige solo a Ajustes si hace falta.
 
 ## Envío de eventos y outbox (resumen; detalle en 07)
 - Tocar "Ya me revisé" o "Listo": vibración `TAP` → `OutboxRepository.record(checkin)` en Room → cancelar la notificación y el refuerzo → encolar `SyncWorker` → cuando el servidor confirma, vibración `CONFIRM`.

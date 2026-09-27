@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.ingeint.checkin.CheckinApp
+import com.ingeint.checkin.data.local.OutboxEventType
 import com.ingeint.checkin.data.model.ReminderSettings
 import com.ingeint.checkin.notify.ChildNotifier
 import com.ingeint.checkin.notify.Haptics
@@ -11,6 +12,8 @@ import com.ingeint.checkin.notify.ParentNotifier
 import com.ingeint.checkin.notify.VibrationPattern
 import com.ingeint.checkin.reminders.ReminderScheduler
 import com.ingeint.checkin.reminders.ReminderTime
+import com.ingeint.checkin.sync.LocationHelper
+import com.ingeint.checkin.sync.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -86,6 +89,27 @@ class PushService : FirebaseMessagingService() {
                     app.container.prefs.saveLastSosAckAt(at)
                     Haptics.vibrate(this@PushService, VibrationPattern.SEEN)
                     ChildNotifier.showMessage(this@PushService, data["text"].orEmpty())
+                }
+                // "¿Dónde está Cesar?" (pedido 2026-09-27): igual que el SOS, nunca vibra ni
+                // avisa nada — completamente silencioso, coherente con la discreción del rol
+                // niño (docs/06). Si no hay ubicación (permiso o timeout), igual se responde
+                // sin ella, nunca se bloquea.
+                "location_request" -> {
+                    val eventId = data["eventId"].orEmpty()
+                    val location = LocationHelper.getCurrentLocationOrNull(this@PushService)
+                    val clientAt = app.container.prefs.correctedNowMillis()
+                    val offset = app.container.prefs.clockOffsetMs.first()
+                    app.container.outboxRepository.record(
+                        type = OutboxEventType.LOCATION_RESPONSE,
+                        clientAtMillis = clientAt,
+                        clockOffsetMs = offset,
+                        source = "app",
+                        replyTo = eventId,
+                        lat = location?.latitude,
+                        lng = location?.longitude,
+                        accuracyM = location?.accuracy,
+                    )
+                    SyncWorker.enqueue(this@PushService)
                 }
                 // --- Padres ---
                 "checkin" ->

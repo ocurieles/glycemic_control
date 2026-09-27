@@ -119,6 +119,21 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits });
       break;
     }
+    case "location_request": {
+      await snap.ref.update(baseUpdate);
+      await sendToChild(familyId, "location_request", { eventId });
+      break;
+    }
+    case "location_response": {
+      await snap.ref.update(baseUpdate);
+      const location = data.location as { lat: number; lng: number; accuracyM?: number } | undefined;
+      if (location) {
+        await db.doc(`families/${familyId}`).update({
+          lastLocation: { lat: location.lat, lng: location.lng, atMillis: realAtMs, replyTo: data.replyTo ?? null },
+        });
+      }
+      break;
+    }
     case "sos_ack": {
       await snap.ref.update(baseUpdate);
       await sendToChild(familyId, "sos_ack", {

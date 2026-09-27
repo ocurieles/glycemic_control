@@ -36,6 +36,8 @@
     <string name="permissions_autostart_desc">Ajuste extra de este teléfono para que la app no se cierre sola</string>
     <string name="permissions_location">Ubicación</string>
     <string name="permissions_location_desc">Solo para el botón de ayuda</string>
+    <string name="permissions_location_background">Ubicación todo el tiempo</string>
+    <string name="permissions_location_background_desc">Para que tus papás puedan saber dónde estás si te lo piden, aunque la app esté cerrada</string>
     <string name="permissions_sms">Mensajes de texto</string>
     <string name="permissions_sms_desc">Como respaldo del botón de ayuda sin internet</string>
     <string name="permissions_dnd">No interrumpir</string>

@@ -58,6 +58,8 @@ fun PermissionsWizardScreen(role: String, onContinue: () -> Unit) {
     val locationLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refreshTick++ }
     val smsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refreshTick++ }
+    val backgroundLocationLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refreshTick++ }
     val settingsLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { refreshTick++ }
 
@@ -128,6 +130,23 @@ fun PermissionsWizardScreen(role: String, onContinue: () -> Unit) {
                             DevicePermissions::hasSms,
                         ) { _, _ -> smsLauncher.launch(Manifest.permission.SEND_SMS) },
                     )
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        add(
+                            PermissionItem(
+                                R.string.permissions_location_background,
+                                R.string.permissions_location_background_desc,
+                                DevicePermissions::hasBackgroundLocation,
+                            ) { ctx, _ ->
+                                if (DevicePermissions.hasLocation(ctx)) {
+                                    backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                                } else {
+                                    locationLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                                    )
+                                }
+                            },
+                        )
+                    }
                 } else {
                     add(
                         PermissionItem(

@@ -110,6 +110,7 @@ La versión ejecutable está en **`docs/schedule-vectors.json`**, que es la fuen
 | `libreConfigured` | Functions |
 | `libreStatus` | Functions — `{ ok, lastError?, lastSuccessAt? }` |
 | `lastCheckinAt` | Functions — máximo `realAt` de las revisiones |
+| `lastLocation` | Functions — `{ lat, lng, atMillis, replyTo }`, respuesta más reciente a `location_request` |
 | `createdAt` | Functions |
 
 ### `families/{familyId}/events/{eventId}`
@@ -117,7 +118,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 
 | Campo | Escribe | Notas |
 |---|---|---|
-| `type` | cliente | `checkin`, `sos`, `insulin_dose` (niño); `parent_message`, `sos_ack` (padre) |
+| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response` (niño); `parent_message`, `sos_ack`, `location_request` (padre) |
 | `createdBy` | cliente | = `request.auth.uid` |
 | `createdAt` | cliente | `serverTimestamp()`; las reglas exigen `== request.time` |
 | `clientAt` | cliente | Timestamp del momento real del toque, **ya corregido** con `clockOffsetMs` |
@@ -125,9 +126,9 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 | `realAt` | Functions | `min(clientAt, createdAt)`: la hora que usan slots, cumplimiento y textos |
 | `source` | cliente | `app` \| `notification` |
 | `text` | cliente | mensajes; máximo 120 caracteres |
-| `location` | cliente | `{ lat, lng, accuracyM }` (solo en SOS) |
+| `location` | cliente | `{ lat, lng, accuracyM }` (SOS y `location_response`) |
 | `smsSent` | cliente | SOS: se envió SMS de respaldo |
-| `replyTo` | cliente | `sos_ack`: id del SOS |
+| `replyTo` | cliente | `sos_ack`: id del SOS; `location_response`: id del `location_request` |
 | `doseUnits` | cliente | `insulin_dose`: uno de `0.5, 1, 1.5, 2, 2.5, 3` (validado en las reglas) |
 | `senderName` | Functions | |
 | `syncedLate` | Functions | `createdAt − realAt > 120 s` |
@@ -198,9 +199,10 @@ service cloud.firestore {
           && request.resource.data.clientAt <= request.time + duration.value(24, 'h')   // reloj adelantado: el servidor usa min(clientAt, createdAt)
           && request.resource.data.clientAt >= request.time - duration.value(7, 'd')
           && request.resource.data.keys().hasOnly(
-               ['type','createdBy','createdAt','clientAt','clockOffsetMs','source','text','location','smsSent','replyTo'])
-          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos'])
-           || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack']))
+               ['type','createdBy','createdAt','clientAt','clockOffsetMs','source','text','location','smsSent','replyTo','doseUnits'])
+          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos', 'insulin_dose', 'location_response'])
+           || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack', 'location_request']))
+          // insulin_dose: doseUnits en [0.5, 3] en pasos de 0.5 (ver firestore.rules real, validación aritmética)
           && (!('text' in request.resource.data) || request.resource.data.text.size() <= 120)
           && (!('clockOffsetMs' in request.resource.data) || (request.resource.data.clockOffsetMs is int
                && request.resource.data.clockOffsetMs.abs() <= 604800000));
@@ -216,6 +218,7 @@ service cloud.firestore {
 }
 ```
 `validSettings()` replica la tabla de la sección 1. Probar con el emulador (`@firebase/rules-unit-testing`).
+> Este bloque es un esqueleto ilustrativo; las reglas reales y actualizadas están en `firebase/firestore.rules` (validación aritmética de `doseUnits`, tipos exactos por `type`, etc.) — si difieren, manda `firestore.rules`.
 
 ## 5. Room (outbox en ambos roles; el caso crítico es el niño)
 
@@ -223,7 +226,7 @@ service cloud.firestore {
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | TEXT PK | UUID, el mismo que el `eventId` de Firestore |
-| `type` | TEXT | niño: `checkin` \| `sos` \| `insulin_dose`; padre: `parent_message` \| `sos_ack` |
+| `type` | TEXT | niño: `checkin` \| `sos` \| `insulin_dose` \| `location_response`; padre: `parent_message` \| `sos_ack` \| `location_request` |
 | `text`, `replyTo` | TEXT? | mensajes y respuestas de los padres |
 | `doseUnits` | REAL? | solo `insulin_dose` |
 | `clockOffsetMs` | INTEGER? | ver 07 |

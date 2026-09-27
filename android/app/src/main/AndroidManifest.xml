@@ -17,6 +17,9 @@
     <!-- Rol niño (opcional, SOS): -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- "¿Dónde está Cesar?": la ubicación se pide desde un push en segundo plano, no
+         solo en el SOS (primer plano) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <!-- Rol padres: -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />

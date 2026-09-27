@@ -83,6 +83,16 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
             }
 
             item {
+                LocationCard(
+                    childName = state.childName,
+                    lastLocation = state.lastLocation,
+                    pending = state.locationRequestedAtMillis != null,
+                    onRequest = viewModel::requestLocation,
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            item {
                 QuickMessages(onSend = viewModel::sendMessage)
                 Spacer(Modifier.height(16.dp))
             }
@@ -144,6 +154,38 @@ private fun ComplianceCard(compliance: DayCompliance?) {
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationCard(childName: String, lastLocation: LastLocation?, pending: Boolean, onRequest: () -> Unit) {
+    val context = LocalContext.current
+    val esVe = remember { Locale.Builder().setLanguage("es").setRegion("VE").build() }
+    Card {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.parent_location_title, childName), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            when {
+                pending -> Text(stringResource(R.string.parent_location_pending), style = MaterialTheme.typography.bodyMedium)
+                lastLocation == null -> Text(stringResource(R.string.parent_location_missing), style = MaterialTheme.typography.bodyMedium)
+                else -> {
+                    val time = remember(lastLocation.atMillis) {
+                        SimpleDateFormat("h:mm a", esVe).format(Date(lastLocation.atMillis))
+                    }
+                    Text(stringResource(R.string.parent_location_last_at, time), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onRequest, enabled = !pending) { Text(stringResource(R.string.parent_location_request)) }
+                if (lastLocation != null) {
+                    Button(onClick = {
+                        val uri = Uri.parse("geo:${lastLocation.lat},${lastLocation.lng}?q=${lastLocation.lat},${lastLocation.lng}")
+                        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    }) { Text(stringResource(R.string.parent_location_view)) }
+                }
             }
         }
     }

@@ -56,8 +56,8 @@ service cloud.firestore {
           && request.resource.data.clientAt >= request.time - duration.value(7, 'd')
           && request.resource.data.keys().hasOnly(
                ['type', 'createdBy', 'createdAt', 'clientAt', 'clockOffsetMs', 'source', 'text', 'location', 'smsSent', 'replyTo', 'doseUnits'])
-          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos', 'insulin_dose'])
-           || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack']))
+          && ((role() == 'child'  && request.resource.data.type in ['checkin', 'sos', 'insulin_dose', 'location_response'])
+           || (role() == 'parent' && request.resource.data.type in ['parent_message', 'sos_ack', 'location_request']))
           && (!('text' in request.resource.data) || request.resource.data.text.size() <= 120)
           && (!('clockOffsetMs' in request.resource.data) || (request.resource.data.clockOffsetMs is int
                && request.resource.data.clockOffsetMs >= -604800000 && request.resource.data.clockOffsetMs <= 604800000))

@@ -57,6 +57,8 @@ La **hora real** del evento es `realAt = min(clientAt, createdAt)` (el cliente y
 | `insulin_dose` | Push a los padres `insulin_dose` con `{ title, body, eventId }` — no toca LibreLinkUp ni cumplimiento, solo registra y avisa. |
 | `parent_message` | Push al niño `parent_message` con `{ text, senderName }`. |
 | `sos_ack` | Push al niño `sos_ack` con `{ senderName, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
+| `location_request` | Push silencioso al niño `location_request` con `{ eventId }` — sin vibración ni notificación (docs/06, discreción). |
+| `location_response` | Si trae `location`, actualiza `families.lastLocation = { lat, lng, atMillis: realAt, replyTo }`. Sin push (el padre lo ve por el listener de `families/{fid}`). |
 
 Si un SOS llega con `syncedLate` (se creó sin red), el push lo indica: "SOS enviado a las 10:12 (llegó 10:30, sin conexión)". Si `smsSent`, lo menciona.
 
@@ -81,6 +83,10 @@ Para cada familia con `settings.enabled == true` y `childUid`:
 
 ### Insulina por día (`insulin.ts`, pedido 2026-09-27)
 Cada `insulin_dose` suma a `days/{fecha}.insulin = { total, doses: [{ eventId, atMillis, units }] }` con `set(..., {merge:true})` + `FieldValue.increment`/`arrayUnion` — no pasa por `computeDay`/`recomputeDay` (es aditivo, no depende del horario de slots). La app del padre lo lee para el calendario de insulina.
+> Bug real (2026-09-27) y ya arreglado: `recomputeDay` escribía `days/{fecha}` con `set(..., {merge:false})`, lo que borraba el campo `insulin` en cada revisión/corrida del scheduler. Ahora `recomputeDay` lee `insulin` del doc existente y lo vuelve a incluir en el `set`, igual que ya hacía con `missedAlerted`/`summarySent`. Para reparar datos ya perdidos existe la callable `backfillInsulinDays` (reconstruye `insulin` desde los eventos `insulin_dose` crudos, que nunca se tocaron) — temporal, pensada para borrarse tras usarla una vez.
+
+### "¿Dónde está Cesar?" (ubicación bajo demanda, pedido 2026-09-27)
+Un padre puede pedir la ubicación actual del niño en cualquier momento (no solo durante un SOS): crea un evento `location_request`; el niño responde con `location_response` (mismo helper `LocationHelper` del SOS, timeout de 5 s, nunca bloquea). Requiere `ACCESS_BACKGROUND_LOCATION` en el niño porque el push puede llegar con la app en segundo plano — se agregó al asistente de permisos (docs/06/08). Es completamente silencioso en el niño (docs/06, discreción): ni vibra ni notifica.
 
 ## Mensajería (`messaging.ts`)
 - `sendToParents(fid, payload, excludeUid?)`: usa las claves de `families.parents` para leer `users/{uid}.fcmToken`. `sendToChild(fid, payload)`: usa **solo** `families.childUid`. Ambos envían con `sendEachForMulticast`.
@@ -103,6 +109,7 @@ Cada `insulin_dose` suma a `days/{fecha}.insulin = { total, doses: [{ eventId, a
 | `sos_ack` | niño | `text, senderName, at` | 1 h | `child_message` |
 | `nudge` | niño | `slot` | 5 min | `child_reminder` |
 | `sync` | niño | — | 1 h | (sin notificación) |
+| `location_request` | niño | `eventId` | 2 min | (sin notificación) |
 
 **Textos para los padres** (el nombre sale de `childName`; la hora se formatea en `es-VE` y la zona de la familia):
 - checkin: `"{Cesar} se revisó ✓"` / `"10:40 a. m. · 128 mg/dL ↗"`; si falta el valor: `"10:40 a. m."`

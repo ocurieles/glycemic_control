@@ -45,6 +45,13 @@
     <string name="parent_quick_message_hint">Escribe un mensaje</string>
     <string name="parent_quick_message_send">Enviar</string>
 
+    <string name="parent_location_title">¿Dónde está %1$s?</string>
+    <string name="parent_location_request">Pedir ubicación</string>
+    <string name="parent_location_pending">Esperando respuesta…</string>
+    <string name="parent_location_missing">Todavía no se ha pedido su ubicación.</string>
+    <string name="parent_location_last_at">Última vez: %1$s</string>
+    <string name="parent_location_view">Ver en el mapa</string>
+
     <string name="parent_timeline_title">Línea de tiempo</string>
     <string name="parent_timeline_empty">Sin eventos todavía</string>
     <string name="parent_timeline_synced_late"> (sincronizado después)</string>

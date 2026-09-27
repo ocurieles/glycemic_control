@@ -7,8 +7,11 @@ import androidx.room.PrimaryKey
 /** Estados de un evento del outbox (docs/07 "Flujo de una revisión"). */
 enum class OutboxStatus { PENDING, SENT, REJECTED }
 
-/** Tipos de evento (docs/03 §3): niño → `checkin`/`sos`/`insulin_dose`; padre → `parent_message`/`sos_ack`. */
-enum class OutboxEventType { CHECKIN, SOS, PARENT_MESSAGE, SOS_ACK, INSULIN_DOSE }
+/**
+ * Tipos de evento (docs/03 §3): niño → `checkin`/`sos`/`insulin_dose`/`location_response`;
+ * padre → `parent_message`/`sos_ack`/`location_request`.
+ */
+enum class OutboxEventType { CHECKIN, SOS, PARENT_MESSAGE, SOS_ACK, INSULIN_DOSE, LOCATION_REQUEST, LOCATION_RESPONSE }
 
 /**
  * `outbox_events` (docs/03 §5): fuente de verdad local. Una revisión existe desde que

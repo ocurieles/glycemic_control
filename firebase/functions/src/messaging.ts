@@ -32,6 +32,7 @@ export const PUSH_TTL_SECONDS = {
   sos_ack: 3600,
   nudge: 300,
   sync: 3600,
+  location_request: 120,
 } as const;
 
 export type PushType = keyof typeof PUSH_TTL_SECONDS;

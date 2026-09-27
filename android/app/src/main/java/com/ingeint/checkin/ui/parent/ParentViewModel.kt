@@ -16,6 +16,9 @@ import kotlinx.coroutines.launch
 /** Un SOS de los últimos 60 min sin `sos_ack` (docs/06 "Banner SOS activo"). */
 data class ActiveSos(val eventId: String, val atMillis: Long, val lat: Double?, val lng: Double?)
 
+/** Última respuesta a "¿Dónde está Cesar?" (`families.lastLocation`). */
+data class LastLocation(val lat: Double, val lng: Double, val atMillis: Long)
+
 data class TimelineEvent(
     val id: String,
     val type: String,
@@ -45,6 +48,8 @@ data class ParentUiState(
     val activeSos: ActiveSos? = null,
     val dayCompliance: DayCompliance? = null,
     val timeline: List<TimelineEvent> = emptyList(),
+    val lastLocation: LastLocation? = null,
+    val locationRequestedAtMillis: Long? = null,
 )
 
 /**
@@ -73,11 +78,25 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                 if (snap == null) return@addSnapshotListener
                 @Suppress("UNCHECKED_CAST")
                 val settings = snap.get("settings") as? Map<String, Any?>
+                @Suppress("UNCHECKED_CAST")
+                val lastLocationMap = snap.get("lastLocation") as? Map<String, Any?>
+                val lastLocation =
+                    lastLocationMap?.let {
+                        val lat = (it["lat"] as? Number)?.toDouble()
+                        val lng = (it["lng"] as? Number)?.toDouble()
+                        val atMillis = (it["atMillis"] as? Number)?.toLong()
+                        if (lat != null && lng != null && atMillis != null) LastLocation(lat, lng, atMillis) else null
+                    }
                 _state.value =
                     _state.value.copy(
                         childName = snap.getString("childName") ?: "",
                         childPhone = settings?.get("childPhone") as? String,
                         remindersEnabled = settings?.get("enabled") as? Boolean ?: true,
+                        lastLocation = lastLocation,
+                        locationRequestedAtMillis =
+                            _state.value.locationRequestedAtMillis?.takeIf {
+                                lastLocation == null || lastLocation.atMillis < it
+                            },
                     )
             }
 
@@ -179,6 +198,22 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                 source = "app",
                 text = "Voy en camino",
                 replyTo = eventId,
+            )
+            SyncWorker.enqueue(container.appContextForChannels)
+        }
+    }
+
+    /** "¿Dónde está Cesar?" (pedido 2026-09-27): pide la ubicación actual bajo demanda. */
+    fun requestLocation() {
+        viewModelScope.launch {
+            val clientAt = container.prefs.correctedNowMillis()
+            val offset = container.prefs.clockOffsetMs.first()
+            _state.value = _state.value.copy(locationRequestedAtMillis = clientAt)
+            container.outboxRepository.record(
+                type = OutboxEventType.LOCATION_REQUEST,
+                clientAtMillis = clientAt,
+                clockOffsetMs = offset,
+                source = "app",
             )
             SyncWorker.enqueue(container.appContextForChannels)
         }

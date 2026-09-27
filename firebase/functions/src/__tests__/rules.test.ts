@@ -253,6 +253,37 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("un padre puede crear un location_request", async () => {
+    await seedFamily();
+    await assertSucceeds(
+      asParent()
+        .doc(`families/${FAMILY_ID}/events/e-locreq`)
+        .set({
+          type: "location_request",
+          createdBy: PARENT_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+        }),
+    );
+  });
+
+  it("el niño puede crear un location_response con ubicación", async () => {
+    await seedFamily();
+    await assertSucceeds(
+      asChild()
+        .doc(`families/${FAMILY_ID}/events/e-locres`)
+        .set({
+          type: "location_response",
+          createdBy: CHILD_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+          location: { lat: 10.06, lng: -69.31, accuracyM: 12 },
+        }),
+    );
+  });
+
   it("un padre puede crear un parent_message pero no un checkin", async () => {
     await seedFamily();
     await assertSucceeds(

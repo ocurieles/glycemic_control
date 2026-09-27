@@ -36,6 +36,19 @@ object DevicePermissions {
             ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED
 
+    /**
+     * "Permitir todo el tiempo" (docs/08, feature "¿Dónde está Cesar?"): sin esto, un
+     * push en segundo plano no puede leer la ubicación en Android 10+. Solo aplica si
+     * ya hay permiso de primer plano (fine/coarse) — si no, siempre es `false`.
+     */
+    fun hasBackgroundLocation(context: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= 29) {
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            hasLocation(context)
+        }
+
     fun hasSms(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) ==
             PackageManager.PERMISSION_GRANTED
