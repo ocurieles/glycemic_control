@@ -187,7 +187,11 @@ export async function lookupGlucoseForEvent(
     return {
       glucose: {
         valueMgDl: result.item.valueMgDl,
-        trend: result.item.trend,
+        // `trend` es opcional (LibreLinkUp puede no traer TrendArrow): NUNCA `undefined`
+        // explícito, porque Firestore rechaza el `.update()` entero si algún campo lo
+        // es (bug real de producción, 2026-09-25: un checkin sin tendencia tumbaba
+        // onEventCreated, sin reintento, dejando esa revisión sin processedAt ni push).
+        ...(result.item.trend !== undefined ? { trend: result.item.trend } : {}),
         level: levelOf(result.item.valueMgDl, settings),
       },
     };

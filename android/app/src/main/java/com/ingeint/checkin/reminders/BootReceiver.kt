@@ -26,6 +26,7 @@ class BootReceiver : BroadcastReceiver() {
                     }
                 }
                 SyncWorker.enqueue(context)
+                SyncWorker.enqueuePeriodic(context)
             } finally {
                 pendingResult.finish()
             }
