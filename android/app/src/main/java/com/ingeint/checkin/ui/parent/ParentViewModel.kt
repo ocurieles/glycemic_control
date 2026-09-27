@@ -81,10 +81,20 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                     )
             }
 
+        // docs/06: "línea de tiempo de HOY" — no "los últimos 50 de siempre". Bug real
+        // reportado 2026-09-27: en un día con muchas pruebas (insulina, revisiones,
+        // mensajes), el límite fijo de 50 se llenaba con eventos de hace rato y
+        // empujaba afuera revisiones recientes que debían verse. `limit(200)` queda
+        // solo como tope de seguridad para un día patológicamente activo.
+        val startOfToday =
+            com.google.firebase.Timestamp(
+                java.util.Date(java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()),
+            )
         eventsListener =
             familyRef.collection("events")
+                .whereGreaterThanOrEqualTo("clientAt", startOfToday)
                 .orderBy("clientAt", Query.Direction.DESCENDING)
-                .limit(50)
+                .limit(200)
                 .addSnapshotListener { snap, _ ->
                     if (snap == null) return@addSnapshotListener
                     val events =
