@@ -110,13 +110,14 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       break;
     }
     case "insulin_dose": {
-      await snap.ref.update(baseUpdate);
+      const { glucose, glucoseError } = await lookupGlucose();
+      await snap.ref.update({ ...baseUpdate, ...(glucoseError ? { glucoseError } : { glucose }) });
       const doseUnits = data.doseUnits as number;
       const dateKey = dateKeyOf(realAtMs, settings.timezone);
-      await addInsulinDose(familyId, dateKey, eventId, realAtMs, doseUnits);
-      const { title, body } = formatInsulinDoseMessage(childName, doseUnits, realAtMs);
+      await addInsulinDose(familyId, dateKey, eventId, realAtMs, doseUnits, glucose);
+      const { title, body } = formatInsulinDoseMessage(childName, doseUnits, realAtMs, settings.timezone, glucose);
       await sendToParents(familyId, "insulin_dose", { title, body, eventId });
-      logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits });
+      logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits, glucoseError });
       break;
     }
     case "location_request": {

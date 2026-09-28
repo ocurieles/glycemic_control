@@ -83,9 +83,11 @@ export function formatInsulinDoseMessage(
   doseUnits: number,
   realAtMs: number,
   timezone = DEFAULT_TIMEZONE,
+  glucose?: GlucoseInfo,
 ): { title: string; body: string } {
   const time = formatTime(realAtMs, timezone);
-  return { title: `${childName} registró una dosis`, body: `${doseUnits} U · ${time}` };
+  const valueSuffix = glucose ? ` · ${glucose.valueMgDl} mg/dL ${TREND_ARROWS[glucose.trend ?? 3] ?? ""}` : "";
+  return { title: `${childName} registró una dosis`, body: `${doseUnits} U · ${time}${valueSuffix}` };
 }
 
 export function formatMissedMessage(childName: string, slotHhmm: string): { title: string; body: string } {

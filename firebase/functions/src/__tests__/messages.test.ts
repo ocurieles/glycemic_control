@@ -69,6 +69,15 @@ describe("messages.ts — textos exactos de docs/04", () => {
     expect(body).toBe("1.5 U · 10:40 a. m.");
   });
 
+  it("registro de dosis con glicemia y tendencia", () => {
+    const { body } = formatInsulinDoseMessage("Cesar", 2, at("10:40"), undefined, {
+      valueMgDl: 128,
+      trend: 4,
+      level: "normal",
+    });
+    expect(body).toBe("2 U · 10:40 a. m. · 128 mg/dL ↗");
+  });
+
   it("checkin_late (sincronizado tarde)", () => {
     const { title, body } = formatCheckinMessage({
       childName: "Cesar",

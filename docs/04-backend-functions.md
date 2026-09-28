@@ -54,7 +54,7 @@ La **hora real** del evento es `realAt = min(clientAt, createdAt)` (el cliente y
 |---|---|
 | `checkin` | 1) `realAt` y `syncedLate = createdAt − realAt > 120 s`. 2) Glucosa: si **no** es `syncedLate`, usa la última lectura; si es `syncedLate`, busca en el **historial** (graph) el punto más cercano a `realAt` (±10 min); si no hay, deja `glucoseError: "stale"`. Timeout total de LibreLinkUp: 8 s. 3) Actualiza el evento y `families.lastCheckinAt = max(actual, realAt)`. 4) `recomputeDay(fid, fecha(realAt))`. 5) Push a los padres `checkin` (o `checkin_late` si `syncedLate`). |
 | `sos` | 0) `realAt` y `syncedLate` (igual que en checkin). 1) Push inmediato a los padres `sos` con la hora `realAt`, **antes** de LibreLinkUp. 2) Intenta obtener la glucosa (5 s); si la obtiene, actualiza el evento y envía un push `sos_glucose`. |
-| `insulin_dose` | Push a los padres `insulin_dose` con `{ title, body, eventId }` — no toca LibreLinkUp ni cumplimiento, solo registra y avisa. |
+| `insulin_dose` | Consulta la glicemia actual (igual que `checkin`, `glucose`/`glucoseError` en el evento), la guarda junto a la dosis en `days/{fecha}.insulin.doses[].glucoseMgDl/glucoseTrend`, y manda push a los padres `insulin_dose` con `{ title, body, eventId }` (el body incluye valor y tendencia si hay). No toca cumplimiento. |
 | `parent_message` | Push al niño `parent_message` con `{ text, senderName }`. |
 | `sos_ack` | Push al niño `sos_ack` con `{ senderName, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
 | `location_request` | Push silencioso al niño `location_request` con `{ eventId }` — sin vibración ni notificación (docs/06, discreción). |

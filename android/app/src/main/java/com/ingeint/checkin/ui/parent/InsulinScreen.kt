@@ -40,6 +40,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
+private val TREND_ARROWS = mapOf(1L to "↓", 2L to "↘", 3L to "→", 4L to "↗", 5L to "↑")
+
 private val ES_VE = Locale.Builder().setLanguage("es").setRegion("VE").build()
 
 /** Calendario de insulina (docs/01, pedido 2026-09-27): total por día, detalle al tocar uno. */
@@ -181,6 +183,15 @@ private fun DayDetailDialog(dateKey: String, doses: List<InsulinDoseEntry>, onDi
                             "${timeFormatter.format(dose.atMillis)} — ${dose.units} U",
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        dose.glucoseMgDl?.let { value ->
+                            val arrow = TREND_ARROWS[dose.glucoseTrend] ?: ""
+                            Text(
+                                "$value mg/dL $arrow",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(

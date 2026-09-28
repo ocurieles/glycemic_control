@@ -16,6 +16,7 @@ export async function addInsulinDose(
   eventId: string,
   atMillis: number,
   units: number,
+  glucose?: { valueMgDl: number; trend?: number },
 ): Promise<void> {
   const dayRef = getFirestore().doc(`families/${familyId}/days/${dateKey}`);
   await dayRef.set(
@@ -23,7 +24,12 @@ export async function addInsulinDose(
       date: dateKey,
       insulin: {
         total: FieldValue.increment(units),
-        doses: FieldValue.arrayUnion({ eventId, atMillis, units }),
+        doses: FieldValue.arrayUnion({
+          eventId,
+          atMillis,
+          units,
+          ...(glucose ? { glucoseMgDl: glucose.valueMgDl, ...(glucose.trend !== undefined ? { glucoseTrend: glucose.trend } : {}) } : {}),
+        }),
       },
     },
     { merge: true },
@@ -41,7 +47,8 @@ export async function backfillInsulinDays(familyId: string, timezone: string): P
   const db = getFirestore();
   const eventsSnap = await db.collection(`families/${familyId}/events`).where("type", "==", "insulin_dose").get();
 
-  const byDate = new Map<string, { total: number; doses: { eventId: string; atMillis: number; units: number }[] }>();
+  type DoseEntry = { eventId: string; atMillis: number; units: number; glucoseMgDl?: number; glucoseTrend?: number };
+  const byDate = new Map<string, { total: number; doses: DoseEntry[] }>();
   for (const doc of eventsSnap.docs) {
     const data = doc.data();
     const realAt = (data.realAt as Timestamp | undefined)?.toMillis();
@@ -50,7 +57,14 @@ export async function backfillInsulinDays(familyId: string, timezone: string): P
     const dateKey = dateKeyOf(realAt, timezone);
     const entry = byDate.get(dateKey) ?? { total: 0, doses: [] };
     entry.total += doseUnits;
-    entry.doses.push({ eventId: doc.id, atMillis: realAt, units: doseUnits });
+    const glucose = data.glucose as { valueMgDl?: number; trend?: number } | undefined;
+    entry.doses.push({
+      eventId: doc.id,
+      atMillis: realAt,
+      units: doseUnits,
+      ...(glucose?.valueMgDl !== undefined ? { glucoseMgDl: glucose.valueMgDl } : {}),
+      ...(glucose?.trend !== undefined ? { glucoseTrend: glucose.trend } : {}),
+    });
     byDate.set(dateKey, entry);
   }
 

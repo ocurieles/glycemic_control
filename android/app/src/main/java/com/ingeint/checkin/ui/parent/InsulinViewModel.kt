@@ -16,7 +16,12 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 /** Una dosis dentro del detalle de un día (docs/01, pedido 2026-09-27). */
-data class InsulinDoseEntry(val atMillis: Long, val units: Double)
+data class InsulinDoseEntry(
+    val atMillis: Long,
+    val units: Double,
+    val glucoseMgDl: Long? = null,
+    val glucoseTrend: Long? = null,
+)
 
 data class InsulinUiState(
     val yearMonth: YearMonth = YearMonth.now(),
@@ -92,7 +97,12 @@ class InsulinViewModel(private val container: AppContainer) : ViewModel() {
                             .mapNotNull { dose ->
                                 val atMillis = (dose["atMillis"] as? Number)?.toLong() ?: return@mapNotNull null
                                 val units = (dose["units"] as? Number)?.toDouble() ?: return@mapNotNull null
-                                InsulinDoseEntry(atMillis, units)
+                                InsulinDoseEntry(
+                                    atMillis,
+                                    units,
+                                    (dose["glucoseMgDl"] as? Number)?.toLong(),
+                                    (dose["glucoseTrend"] as? Number)?.toLong(),
+                                )
                             }
                             .sortedBy { it.atMillis },
                 )
