@@ -63,6 +63,8 @@
     <string name="parent_event_location">Ubicación</string>
 
     <string name="parent_insulin_calendar_title">Calendario de insulina</string>
+    <string name="parent_insulin_log_title">Registrar insulina</string>
+    <string name="parent_insulin_log_done">Registrado ✓</string>
     <string name="parent_insulin_prev_month">◀ Anterior</string>
     <string name="parent_insulin_next_month">Siguiente ▶</string>
     <string name="parent_insulin_no_doses">Sin registros ese día</string>

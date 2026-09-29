@@ -10,6 +10,7 @@ import com.ingeint.checkin.sync.SyncWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,7 @@ data class ParentUiState(
     val timeline: List<TimelineEvent> = emptyList(),
     val lastLocation: LastLocation? = null,
     val locationRequestedAtMillis: Long? = null,
+    val doseLogged: Boolean = false,
 )
 
 /**
@@ -200,6 +202,29 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                 replyTo = eventId,
             )
             SyncWorker.enqueue(container.appContextForChannels)
+        }
+    }
+
+    /**
+     * Registro rápido de insulina desde la app del padre (pedido 2026-09-29): mismos
+     * valores predefinidos y mismo patrón de un toque que ya tiene Cesar en la suya
+     * (`ChildViewModel.logInsulinDose`), sin ningún cambio del lado del niño.
+     */
+    fun logInsulinDose(units: Double) {
+        viewModelScope.launch {
+            val clientAt = container.prefs.correctedNowMillis()
+            val offset = container.prefs.clockOffsetMs.first()
+            container.outboxRepository.record(
+                type = OutboxEventType.INSULIN_DOSE,
+                clientAtMillis = clientAt,
+                clockOffsetMs = offset,
+                source = "app",
+                doseUnits = units,
+            )
+            SyncWorker.enqueue(container.appContextForChannels)
+            _state.value = _state.value.copy(doseLogged = true)
+            delay(2_000)
+            _state.value = _state.value.copy(doseLogged = false)
         }
     }
 

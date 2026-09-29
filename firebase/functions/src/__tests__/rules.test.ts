@@ -173,6 +173,22 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("un padre puede crear un insulin_dose con una dosis permitida", async () => {
+    await seedFamily();
+    await assertSucceeds(
+      asParent()
+        .doc(`families/${FAMILY_ID}/events/e-dose-parent`)
+        .set({
+          type: "insulin_dose",
+          createdBy: PARENT_UID,
+          createdAt: serverTimestamp(),
+          clientAt: Timestamp.now(),
+          source: "app",
+          doseUnits: 2,
+        }),
+    );
+  });
+
   it("el niño puede crear un insulin_dose con una dosis entera (1, 2, 3 U)", async () => {
     await seedFamily();
     for (const [i, dose] of [1, 2, 3].entries()) {

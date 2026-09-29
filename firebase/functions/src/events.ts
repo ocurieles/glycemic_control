@@ -115,8 +115,9 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       const doseUnits = data.doseUnits as number;
       const dateKey = dateKeyOf(realAtMs, settings.timezone);
       await addInsulinDose(familyId, dateKey, eventId, realAtMs, doseUnits, glucose);
-      const { title, body } = formatInsulinDoseMessage(childName, doseUnits, realAtMs, settings.timezone, glucose);
-      await sendToParents(familyId, "insulin_dose", { title, body, eventId });
+      const { title, body } = formatInsulinDoseMessage(senderName, doseUnits, realAtMs, settings.timezone, glucose);
+      // Si lo registró un padre, no hace falta avisarle a sí mismo — solo al otro padre.
+      await sendToParents(familyId, "insulin_dose", { title, body, eventId }, data.createdBy as string);
       logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits, glucoseError });
       break;
     }

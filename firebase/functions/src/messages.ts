@@ -77,9 +77,12 @@ export function formatSosMessage(input: SosMessageInput): { title: string; body:
   return { title: `🆘 ${childName} necesita ayuda`, body: `${time} · Toca para ver ubicación` };
 }
 
-/** Registro de dosis (docs/01, pedido explícito del usuario 2026-09-24). Solo lo ve el padre. */
+/**
+ * Registro de dosis (docs/01, pedido 2026-09-24; también lo puede registrar un padre
+ * desde su propia app, pedido 2026-09-29). Solo lo ven los padres.
+ */
 export function formatInsulinDoseMessage(
-  childName: string,
+  senderName: string,
   doseUnits: number,
   realAtMs: number,
   timezone = DEFAULT_TIMEZONE,
@@ -87,7 +90,7 @@ export function formatInsulinDoseMessage(
 ): { title: string; body: string } {
   const time = formatTime(realAtMs, timezone);
   const valueSuffix = glucose ? ` · ${glucose.valueMgDl} mg/dL ${TREND_ARROWS[glucose.trend ?? 3] ?? ""}` : "";
-  return { title: `${childName} registró una dosis`, body: `${doseUnits} U · ${time}${valueSuffix}` };
+  return { title: `${senderName} registró una dosis`, body: `${doseUnits} U · ${time}${valueSuffix}` };
 }
 
 export function formatMissedMessage(childName: string, slotHhmm: string): { title: string; body: string } {

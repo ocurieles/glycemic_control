@@ -18,7 +18,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Vaccines
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,7 +35,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,18 +54,23 @@ import com.ingeint.checkin.ui.theme.brandButtonColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    var showInsulinLog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(state.childName) },
                 actions = {
+                    IconButton(onClick = { showInsulinLog = true }) {
+                        Icon(Icons.Filled.Vaccines, contentDescription = stringResource(R.string.parent_insulin_log_title))
+                    }
                     IconButton(onClick = onOpenInsulin) {
                         Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.parent_insulin_calendar_title))
                     }
@@ -117,6 +127,49 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
             }
         }
     }
+
+    if (showInsulinLog) {
+        InsulinLogDialog(
+            doseLogged = state.doseLogged,
+            onPick = viewModel::logInsulinDose,
+            onDismiss = { showInsulinLog = false },
+        )
+    }
+}
+
+/** Mismos valores y mismo patrón de un toque que `QuickLogDialog` del niño (docs/01). */
+private val PARENT_INSULIN_DOSES = listOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
+
+@Composable
+private fun InsulinLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDismiss: () -> Unit) {
+    LaunchedEffect(doseLogged) {
+        if (doseLogged) {
+            delay(600)
+            onDismiss()
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.parent_insulin_log_title)) },
+        text = {
+            Column {
+                if (doseLogged) {
+                    Text(stringResource(R.string.parent_insulin_log_done), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                }
+                PARENT_INSULIN_DOSES.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { dose ->
+                            FilterChip(selected = false, onClick = { onPick(dose) }, label = { Text(dose.toString()) })
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.child_quick_log_cancel)) } },
+    )
 }
 
 @Composable

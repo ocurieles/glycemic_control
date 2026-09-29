@@ -118,7 +118,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 
 | Campo | Escribe | Notas |
 |---|---|---|
-| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response` (niño); `parent_message`, `sos_ack`, `location_request` (padre) |
+| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response` (niño); `parent_message`, `sos_ack`, `location_request`, `insulin_dose` (padre) |
 | `createdBy` | cliente | = `request.auth.uid` |
 | `createdAt` | cliente | `serverTimestamp()`; las reglas exigen `== request.time` |
 | `clientAt` | cliente | Timestamp del momento real del toque, **ya corregido** con `clockOffsetMs` |
@@ -226,7 +226,7 @@ service cloud.firestore {
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | TEXT PK | UUID, el mismo que el `eventId` de Firestore |
-| `type` | TEXT | niño: `checkin` \| `sos` \| `insulin_dose` \| `location_response`; padre: `parent_message` \| `sos_ack` \| `location_request` |
+| `type` | TEXT | niño: `checkin` \| `sos` \| `insulin_dose` \| `location_response`; padre: `parent_message` \| `sos_ack` \| `location_request` \| `insulin_dose` |
 | `text`, `replyTo` | TEXT? | mensajes y respuestas de los padres |
 | `doseUnits` | REAL? | solo `insulin_dose` |
 | `clockOffsetMs` | INTEGER? | ver 07 |
