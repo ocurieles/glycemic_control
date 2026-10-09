@@ -66,6 +66,31 @@ describe.runIf(canRun)("onEventCreated (integración con el emulador)", () => {
     expect((familySnap.get("lastCheckinAt") as FirebaseFirestore.Timestamp).toMillis()).toBe(clientAt.toMillis());
   });
 
+  it("una dosis de insulina de un padre y la del niño suman en days/{fecha}.insulin", async () => {
+    const familyId = `fam-dose-${Date.now()}`;
+    await db.doc(`families/${familyId}`).set({
+      childName: "Cesar",
+      childUid: "child1",
+      parents: { parent1: { name: "Mamá" }, parent2: { name: "Papá" } },
+      settings: {},
+      createdAt: Timestamp.now(),
+    });
+    const at = Timestamp.now();
+    await db.doc(`families/${familyId}/events/dose-parent`).set({
+      type: "insulin_dose", createdBy: "parent1", createdAt: at, clientAt: at, source: "app", doseUnits: 2,
+    });
+    await db.doc(`families/${familyId}/events/dose-child`).set({
+      type: "insulin_dose", createdBy: "child1", createdAt: at, clientAt: at, source: "app", doseUnits: 1,
+    });
+    const day = await waitFor(async () => {
+      const snaps = await db.collection(`families/${familyId}/days`).get();
+      const doc = snaps.docs.find((d) => (d.get("insulin.doses") ?? []).length === 2);
+      return doc?.data();
+    });
+    expect(day.insulin.total).toBe(3);
+    expect(day.insulin.doses.map((d: { eventId: string }) => d.eventId).sort()).toEqual(["dose-child", "dose-parent"]);
+  });
+
   it("marca syncedLate cuando createdAt llega más de 120s después de clientAt", async () => {
     const familyId = `fam-late-${Date.now()}`;
     await db.doc(`families/${familyId}`).set({
