@@ -57,6 +57,9 @@ data class ChildUiState(
      * verdad) y luego se queda chico, como histórico, en [lastCheckinGlucoseValueMgDl]. */
     val showGlucosePopup: Boolean = false,
     val doseLogged: Boolean = false,
+    /** Dosis habitual del plan diario (Ajustes del padre), para preseleccionarla. */
+    val basalUnits: Int? = null,
+    val basalLogged: Boolean = false,
 )
 
 /**
@@ -161,6 +164,27 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** Dosis diaria (Tresiba), pedido 2026-10-16: mismo patrón de un solo paso, 1–80 U. */
+    fun logBasalDose(units: Int) {
+        if (units !in 1..80) return
+        Haptics.vibrate(context, VibrationPattern.TAP)
+        viewModelScope.launch {
+            val clientAt = container.prefs.correctedNowMillis()
+            val offset = container.prefs.clockOffsetMs.first()
+            container.outboxRepository.record(
+                type = OutboxEventType.BASAL_DOSE,
+                clientAtMillis = clientAt,
+                clockOffsetMs = offset,
+                source = "app",
+                doseUnits = units.toDouble(),
+            )
+            SyncWorker.enqueue(context)
+            _state.value = _state.value.copy(basalLogged = true)
+            delay(2_000)
+            _state.value = _state.value.copy(basalLogged = false)
+        }
+    }
+
     /** SOS (docs/06 H5, docs/07 "SOS sin conexión"): nunca se bloquea por ubicación o red. */
     fun onSos() {
         Haptics.vibrate(context, VibrationPattern.TAP)
@@ -209,6 +233,9 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
         val familyId = container.prefs.familyId.first() ?: return
         familyListener =
             container.firestore.collection("families").document(familyId).addSnapshotListener { snap, _ ->
+                @Suppress("UNCHECKED_CAST")
+                val basalPlan = snap?.get("basalPlan") as? Map<String, Any?>
+                _state.value = _state.value.copy(basalUnits = (basalPlan?.get("units") as? Number)?.toInt())
                 @Suppress("UNCHECKED_CAST")
                 val settingsMap = snap?.get("settings") as? Map<String, Any?> ?: return@addSnapshotListener
                 val settings = ReminderSettings.fromMap(settingsMap)

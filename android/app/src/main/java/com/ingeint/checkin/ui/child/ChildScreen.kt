@@ -18,7 +18,10 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -106,15 +109,25 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
 
     if (showQuickLog) {
         QuickLogDialog(
-            doseLogged = state.doseLogged,
+            doseLogged = state.doseLogged || state.basalLogged,
+            basalUnits = state.basalUnits,
             onPick = viewModel::logInsulinDose,
+            onBasal = viewModel::logBasalDose,
             onDismiss = { showQuickLog = false },
         )
     }
 }
 
 @Composable
-private fun QuickLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDismiss: () -> Unit) {
+private fun QuickLogDialog(
+    doseLogged: Boolean,
+    basalUnits: Int?,
+    onPick: (Double) -> Unit,
+    onBasal: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var basal by remember(basalUnits) { mutableStateOf(basalUnits ?: 10) }
+    var confirmBasal by remember { mutableStateOf(false) }
     // Bug real reportado 2026-09-27: el diálogo se quedaba abierto tras elegir una
     // dosis y solo cambiaba un texto chico ("Registrado ✓") — parecía que no había
     // pasado nada, así que se cierra solo apenas se confirma.
@@ -141,11 +154,32 @@ private fun QuickLogDialog(doseLogged: Boolean, onPick: (Double) -> Unit, onDism
                     }
                     Spacer(Modifier.height(8.dp))
                 }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(stringResource(R.string.child_basal_title), style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilledTonalButton(onClick = { if (basal > 1) basal-- }) { Text("−") }
+                    Text("$basal U", style = MaterialTheme.typography.titleLarge)
+                    FilledTonalButton(onClick = { if (basal < 80) basal++ }) { Text("+") }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { confirmBasal = true }) { Text(stringResource(R.string.child_basal_save)) }
             }
         },
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.child_quick_log_cancel)) } },
     )
+
+    if (confirmBasal) {
+        AlertDialog(
+            onDismissRequest = { confirmBasal = false },
+            text = { Text(stringResource(R.string.child_basal_confirm, basal)) },
+            confirmButton = {
+                TextButton(onClick = { confirmBasal = false; onBasal(basal) }) { Text(stringResource(R.string.child_basal_yes)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmBasal = false }) { Text(stringResource(R.string.child_basal_no)) } },
+        )
+    }
 }
 
 /** Mismas flechas que el backend (`TREND_ARROWS` de `messages.ts`, docs/04). */

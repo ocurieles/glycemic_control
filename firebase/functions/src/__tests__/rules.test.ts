@@ -189,7 +189,7 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
-  it("un padre puede crear una comida y una Tresiba válidas, y el niño no", async () => {
+  it("un padre puede crear una comida y una Tresiba válidas; el niño solo la Tresiba", async () => {
     await seedFamily();
     const base = { createdAt: serverTimestamp(), clientAt: Timestamp.now(), source: "app" };
     await assertSucceeds(
@@ -199,7 +199,8 @@ describe("families/{fid}/events/{eid}", () => {
       asParent().doc(`families/${FAMILY_ID}/events/b1`).set({ ...base, type: "basal_dose", createdBy: PARENT_UID, doseUnits: 20 }),
     );
     await assertFails(asChild().doc(`families/${FAMILY_ID}/events/m2`).set({ ...base, type: "meal", createdBy: CHILD_UID, carbsGrams: 30 }));
-    await assertFails(asChild().doc(`families/${FAMILY_ID}/events/b2`).set({ ...base, type: "basal_dose", createdBy: CHILD_UID, doseUnits: 10 }));
+    await assertSucceeds(asChild().doc(`families/${FAMILY_ID}/events/b2`).set({ ...base, type: "basal_dose", createdBy: CHILD_UID, doseUnits: 10 }));
+    await assertFails(asChild().doc(`families/${FAMILY_ID}/events/b3`).set({ ...base, type: "basal_dose", createdBy: CHILD_UID, doseUnits: 100 }));
   });
 
   it("rechaza comidas y Tresiba fuera de rango o no enteras", async () => {
