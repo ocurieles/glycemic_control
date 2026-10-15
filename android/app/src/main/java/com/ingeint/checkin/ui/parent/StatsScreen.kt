@@ -109,14 +109,14 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit) {
             when {
                 state.loading -> CircularProgressIndicator()
                 state.error -> Text(stringResource(R.string.parent_stats_error), color = MaterialTheme.colorScheme.error)
-                stats != null -> StatsContent(stats)
+                stats != null -> StatsContent(stats, state.advice)
             }
         }
     }
 }
 
 @Composable
-private fun StatsContent(s: StatsResult) {
+private fun StatsContent(s: StatsResult, advice: AdvisorResult?) {
     Text(stringResource(R.string.parent_stats_glucose), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
     val g = s.glucose
@@ -169,6 +169,26 @@ private fun StatsContent(s: StatsResult) {
     Spacer(Modifier.height(6.dp))
     DayChart(s)
 
+    Spacer(Modifier.height(24.dp))
+    Text(stringResource(R.string.parent_stats_food), style = MaterialTheme.typography.titleMedium)
+    Spacer(Modifier.height(8.dp))
+    val basalDays = s.days.filter { it.basalUnits > 0 }
+    MetricRow(
+        listOf(
+            Triple(stringResource(R.string.parent_stats_carbs_daily), s.avgDailyCarbs.toString(), "g"),
+            Triple(stringResource(R.string.parent_stats_meals), s.totalMeals.toString(), ""),
+            Triple(
+                stringResource(R.string.parent_stats_basal_avg),
+                if (basalDays.isEmpty()) "—" else formatOneDecimal(basalDays.sumOf { it.basalUnits } / basalDays.size),
+                if (basalDays.isEmpty()) "" else "U",
+            ),
+        ),
+    )
+    if (advice != null) {
+        Spacer(Modifier.height(12.dp))
+        AdviceCard(advice, s)
+    }
+
     s.response?.let { r ->
         Spacer(Modifier.height(24.dp))
         Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -189,6 +209,71 @@ private fun StatsContent(s: StatsResult) {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+@Composable
+private fun slotName(slot: MealSlot): String =
+    stringResource(
+        when (slot) {
+            MealSlot.BREAKFAST -> R.string.parent_slot_breakfast
+            MealSlot.LUNCH -> R.string.parent_slot_lunch
+            MealSlot.SNACK -> R.string.parent_slot_snack
+            MealSlot.DINNER -> R.string.parent_slot_dinner
+            MealSlot.NIGHT -> R.string.parent_slot_night
+        },
+    )
+
+@Composable
+private fun AdviceCard(a: AdvisorResult, s: StatsResult) {
+    val slot = slotName(a.targetSlot)
+    val target = a.slots.first { it.slot == a.targetSlot }
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.parent_advice_title, slot), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            val range = a.suggestion
+            when {
+                a.status == GlucoseStatus.LOW ->
+                    Text(
+                        stringResource(R.string.parent_advice_low, a.lastGlucose ?: 0),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                range != null -> {
+                    Text(
+                        if (range.minGrams == range.maxGrams) "${range.minGrams} g" else "${range.minGrams}–${range.maxGrams} g",
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.parent_advice_based_on, range.basedOn, slot, s.lowThreshold, s.highThreshold),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (a.status == GlucoseStatus.HIGH) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(stringResource(R.string.parent_advice_high, a.lastGlucose ?: 0), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                else ->
+                    Text(
+                        stringResource(R.string.parent_advice_not_enough, a.minMealsNeeded, slot, target.inRange),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+            }
+            if (a.todayMean != null && a.todayInRangePct != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.parent_advice_today, a.todayMean, a.todayInRangePct.toInt()),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.parent_advice_disclaimer), style = MaterialTheme.typography.labelSmall)
+        }
+    }
 }
 
 @Composable

@@ -1,6 +1,7 @@
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
+import { checkBasal } from "./basal";
 import { resolveSettings } from "./families";
 import { sendToChild, sendToParents } from "./messaging";
 import { formatDaySummaryMessage, formatGroupedLateMessage, formatMissedMessage } from "./messages";
@@ -24,6 +25,9 @@ export const checkMissedSlots = onSchedule({ schedule: "every 5 minutes", timeZo
   for (const familyDoc of familiesSnap.docs) {
     const family = familyDoc.data();
     const settings = resolveSettings(family.settings as Partial<ReminderSettings> | undefined);
+    await checkBasal(familyDoc.id, family, settings.timezone).catch((err) =>
+      logger.warn("checkBasal falló", { familyId: familyDoc.id, err }),
+    );
     if (!settings.enabled || !family.childUid) continue;
 
     const familyId = familyDoc.id;

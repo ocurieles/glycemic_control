@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}, onOpenStats: () -> Unit = {}) {
+fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}, onOpenStats: () -> Unit = {}, onOpenLog: (String) -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     var showInsulinLog by remember { mutableStateOf(false) }
@@ -111,6 +111,11 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
                     pending = state.locationRequestedAtMillis != null,
                     onRequest = viewModel::requestLocation,
                 )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            item {
+                FoodCard(onOpenLog)
                 Spacer(Modifier.height(16.dp))
             }
 
@@ -268,6 +273,24 @@ private fun LocationCard(childName: String, lastLocation: LastLocation?, pending
 }
 
 @Composable
+private fun FoodCard(onOpenLog: (String) -> Unit) {
+    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.parent_log_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { onOpenLog("meal") }, colors = brandButtonColors(), modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.parent_log_meal), maxLines = 1)
+                }
+                Button(onClick = { onOpenLog("basal") }, colors = brandButtonColors(), modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.parent_log_basal), maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun QuickMessages(onSend: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
     val reminderText = stringResource(R.string.parent_quick_message_reminder)
@@ -313,6 +336,8 @@ private fun TimelineRow(event: TimelineEvent) {
             "parent_message" -> stringResource(R.string.parent_event_parent_message)
             "sos_ack" -> stringResource(R.string.parent_event_sos_ack)
             "insulin_dose" -> stringResource(R.string.parent_event_insulin_dose)
+            "meal" -> stringResource(R.string.parent_event_meal)
+            "basal_dose" -> stringResource(R.string.parent_event_basal)
             "location_request", "location_response" -> stringResource(R.string.parent_event_location)
             else -> event.type
         }
@@ -343,6 +368,7 @@ private fun TimelineRow(event: TimelineEvent) {
             Text("$value mg/dL $arrow", style = MaterialTheme.typography.bodySmall, color = color)
         }
         event.doseUnits?.let { Text("$it U", style = MaterialTheme.typography.bodySmall) }
+        event.carbsGrams?.let { Text("$it g de carbohidratos", style = MaterialTheme.typography.bodySmall) }
         event.text?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         event.senderName?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))

@@ -17,6 +17,8 @@ class StatsPdfInstrumentedTest {
             events += StatEvent("checkin", base - 10 * 3600_000L, 90 + (d * 7) % 200, 3, null)
             events += StatEvent("insulin_dose", base - 6 * 3600_000L, 120 + (d * 11) % 150, 4, 1.0 + d % 3)
             events += StatEvent("checkin", base - 4 * 3600_000L, 110 + (d * 13) % 160, 3, null)
+            events += StatEvent("meal", base - 8 * 3600_000L, null, null, null, 30 + (d * 5) % 40)
+            events += StatEvent("basal_dose", base - 12 * 3600_000L, null, null, 20.0, null)
         }
         val stats = StatsCalculator.compute(events, 30, zone, 70, 180, now)
         val context = InstrumentationRegistry.getInstrumentation().targetContext

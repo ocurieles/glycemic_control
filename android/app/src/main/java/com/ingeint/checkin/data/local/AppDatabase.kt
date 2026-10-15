@@ -16,7 +16,15 @@ private val MIGRATION_1_2 =
         }
     }
 
-@Database(entities = [OutboxEvent::class], version = 2, exportSchema = false)
+/** v2 → v3: agrega `carbsGrams` para `OutboxEventType.MEAL` (pedido 2026-10-15). */
+private val MIGRATION_2_3 =
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE outbox_events ADD COLUMN carbsGrams INTEGER DEFAULT NULL")
+        }
+    }
+
+@Database(entities = [OutboxEvent::class], version = 3, exportSchema = false)
 @TypeConverters(OutboxConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun outboxDao(): OutboxDao
@@ -27,7 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "checkin.db")
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { instance = it }
             }

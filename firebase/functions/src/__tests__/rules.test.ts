@@ -189,6 +189,43 @@ describe("families/{fid}/events/{eid}", () => {
     );
   });
 
+  it("un padre puede crear una comida y una Tresiba válidas, y el niño no", async () => {
+    await seedFamily();
+    const base = { createdAt: serverTimestamp(), clientAt: Timestamp.now(), source: "app" };
+    await assertSucceeds(
+      asParent().doc(`families/${FAMILY_ID}/events/m1`).set({ ...base, type: "meal", createdBy: PARENT_UID, carbsGrams: 45, text: "arepa" }),
+    );
+    await assertSucceeds(
+      asParent().doc(`families/${FAMILY_ID}/events/b1`).set({ ...base, type: "basal_dose", createdBy: PARENT_UID, doseUnits: 20 }),
+    );
+    await assertFails(asChild().doc(`families/${FAMILY_ID}/events/m2`).set({ ...base, type: "meal", createdBy: CHILD_UID, carbsGrams: 30 }));
+    await assertFails(asChild().doc(`families/${FAMILY_ID}/events/b2`).set({ ...base, type: "basal_dose", createdBy: CHILD_UID, doseUnits: 10 }));
+  });
+
+  it("rechaza comidas y Tresiba fuera de rango o no enteras", async () => {
+    await seedFamily();
+    const base = { createdAt: serverTimestamp(), clientAt: Timestamp.now(), source: "app", createdBy: PARENT_UID };
+    for (const [i, extra] of [
+      { type: "meal", carbsGrams: 0 },
+      { type: "meal", carbsGrams: 301 },
+      { type: "meal", carbsGrams: 30.5 },
+      { type: "meal" },
+      { type: "basal_dose", doseUnits: 0 },
+      { type: "basal_dose", doseUnits: 81 },
+      { type: "basal_dose", doseUnits: 12.5 },
+    ].entries()) {
+      await assertFails(asParent().doc(`families/${FAMILY_ID}/events/bad${i}`).set({ ...base, ...extra }));
+    }
+  });
+
+  it("un padre puede guardar el plan de Tresiba y se valida", async () => {
+    await seedFamily();
+    await assertSucceeds(asParent().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 20, time: "21:00" } }));
+    await assertFails(asParent().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 200, time: "21:00" } }));
+    await assertFails(asParent().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 20, time: "9pm" } }));
+    await assertFails(asChild().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 20, time: "21:00" } }));
+  });
+
   it("el niño puede crear un insulin_dose con una dosis entera (1, 2, 3 U)", async () => {
     await seedFamily();
     for (const [i, dose] of [1, 2, 3].entries()) {

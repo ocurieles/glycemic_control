@@ -11,7 +11,19 @@ enum class OutboxStatus { PENDING, SENT, REJECTED }
  * Tipos de evento (docs/03 §3): niño → `checkin`/`sos`/`insulin_dose`/`location_response`;
  * padre → `parent_message`/`sos_ack`/`location_request`.
  */
-enum class OutboxEventType { CHECKIN, SOS, PARENT_MESSAGE, SOS_ACK, INSULIN_DOSE, LOCATION_REQUEST, LOCATION_RESPONSE }
+enum class OutboxEventType {
+    CHECKIN,
+    SOS,
+    PARENT_MESSAGE,
+    SOS_ACK,
+    INSULIN_DOSE,
+    LOCATION_REQUEST,
+    LOCATION_RESPONSE,
+
+    /** Comida con carbohidratos y Tresiba: solo los registra un padre (pedido 2026-10-15). */
+    MEAL,
+    BASAL_DOSE,
+}
 
 /**
  * `outbox_events` (docs/03 §5): fuente de verdad local. Una revisión existe desde que
@@ -36,6 +48,8 @@ data class OutboxEvent(
     val smsSent: Boolean = false,
     /** Solo para `INSULIN_DOSE` (docs/01, docs/03): unidades, uno de 0.5/1/1.5/2/2.5/3. */
     val doseUnits: Double? = null,
+    /** Solo para `MEAL`: carbohidratos en gramos. */
+    val carbsGrams: Int? = null,
     val status: OutboxStatus = OutboxStatus.PENDING,
     val attempts: Int = 0,
     val lastError: String? = null,

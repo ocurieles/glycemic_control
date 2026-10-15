@@ -57,6 +57,8 @@ La **hora real** del evento es `realAt = min(clientAt, createdAt)` (el cliente y
 | `insulin_dose` | Lo puede crear el niño **o un padre** (pedido 2026-09-29, mismo botón/valores que ya tiene el niño, un toque). Consulta la glicemia actual (igual que `checkin`, `glucose`/`glucoseError` en el evento), la guarda junto a la dosis en `days/{fecha}.insulin.doses[].glucoseMgDl/glucoseTrend`, y manda push `insulin_dose` a los **otros** padres (si lo registró un padre, no se avisa a sí mismo) con `{ title, body, eventId }` — el título usa `senderName` (el niño o el padre que la registró), y el body incluye valor y tendencia si hay. No toca cumplimiento. |
 | `parent_message` | Push al niño `parent_message` con `{ text, senderName }`. |
 | `sos_ack` | Push al niño `sos_ack` con `{ senderName, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
+| `meal` | Consulta la glicemia como en `checkin` (`glucose`/`glucoseError`) y avisa a los **otros** padres (`meal`): "Mamá registró una comida · 45 g de carbohidratos · 8:05 a. m. · 110 mg/dL →". |
+| `basal_dose` | Tresiba: marca el día en `meta/basal.doneDates` y avisa a los otros padres (`basal_dose`). |
 | `location_request` | Push silencioso al niño `location_request` con `{ eventId }` — sin vibración ni notificación (docs/06, discreción). |
 | `location_response` | Si trae `location`, actualiza `families.lastLocation = { lat, lng, atMillis: realAt, replyTo }`. Sin push (el padre lo ve por el listener de `families/{fid}`). |
 
@@ -76,6 +78,9 @@ Para cada familia con `settings.enabled == true` y `childUid`:
    - push al niño `nudge`,
    - lo agrega a `missedAlerted` (con `arrayUnion`, en una transacción).
 4. Si es la primera corrida después de `endTime`, envía a los padres el push `day_summary` ("Hoy: 33/36 a tiempo, 2 tarde, 1 sin respuesta"). Se marca con `days/{fecha}.summarySent = true`.
+
+### Aviso de Tresiba pendiente (`basal.ts`)
+En cada corrida de `checkMissedSlots`, si `families.basalPlan.enabled` y pasaron 30 min de la hora prevista sin Tresiba registrada hoy (`meta/basal.doneDates`) y sin aviso previo hoy (`alertedDate`), push `basal_missing` a los padres. Una vez por día.
 
 ## `computeDay` y `recomputeDay`
 - `computeDay(settings, checkins[], now) → DayDoc` es **pura**, vive en `compliance.ts` y usa `schedule.ts`.
@@ -110,6 +115,8 @@ Un padre puede pedir la ubicación actual del niño en cualquier momento (no sol
 | `nudge` | niño | `slot` | 5 min | `child_reminder` |
 | `sync` | niño | — | 1 h | (sin notificación) |
 | `location_request` | niño | `eventId` | 2 min | (sin notificación) |
+| `meal`, `basal_dose` | otros padres | `title, body, eventId` | 1 h | `parent_checkin` |
+| `basal_missing` | padres | `title, body` | 6 h | `parent_alert` |
 
 **Textos para los padres** (el nombre sale de `childName`; la hora se formatea en `es-VE` y la zona de la familia):
 - checkin: `"{Cesar} se revisó ✓"` / `"10:40 a. m. · 128 mg/dL ↗"`; si falta el valor: `"10:40 a. m."`

@@ -6,7 +6,15 @@ import { resolveSettings } from "./families";
 import { lookupGlucoseForEvent } from "./libre/service";
 import { sendToChild, sendToParents } from "./messaging";
 import { addInsulinDose } from "./insulin";
-import { formatCheckinMessage, formatInsulinDoseMessage, formatSosMessage, GlucoseInfo } from "./messages";
+import {
+  formatBasalDoseMessage,
+  formatCheckinMessage,
+  formatInsulinDoseMessage,
+  formatMealMessage,
+  formatSosMessage,
+  GlucoseInfo,
+} from "./messages";
+import { markBasalDone } from "./basal";
 import { registerLateCheckin } from "./pushBuffer";
 import { recomputeDay } from "./recompute";
 import { dateKeyOf } from "./time";
@@ -119,6 +127,31 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       // Si lo registró un padre, no hace falta avisarle a sí mismo — solo al otro padre.
       await sendToParents(familyId, "insulin_dose", { title, body, eventId }, data.createdBy as string);
       logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits, glucoseError });
+      break;
+    }
+    case "meal": {
+      const { glucose, glucoseError } = await lookupGlucose();
+      await snap.ref.update({ ...baseUpdate, ...(glucoseError ? { glucoseError } : { glucose }) });
+      const carbsGrams = data.carbsGrams as number;
+      const { title, body } = formatMealMessage(
+        senderName,
+        carbsGrams,
+        realAtMs,
+        settings.timezone,
+        glucose,
+        data.text as string | undefined,
+      );
+      await sendToParents(familyId, "meal", { title, body, eventId }, data.createdBy as string);
+      logger.info("meal procesado", { familyId, eventId, carbsGrams, glucoseError });
+      break;
+    }
+    case "basal_dose": {
+      await snap.ref.update(baseUpdate);
+      const doseUnits = data.doseUnits as number;
+      await markBasalDone(familyId, dateKeyOf(realAtMs, settings.timezone));
+      const { title, body } = formatBasalDoseMessage(senderName, doseUnits, realAtMs, settings.timezone);
+      await sendToParents(familyId, "basal_dose", { title, body, eventId }, data.createdBy as string);
+      logger.info("basal_dose procesado", { familyId, eventId, doseUnits });
       break;
     }
     case "location_request": {

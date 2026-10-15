@@ -91,6 +91,33 @@ describe.runIf(canRun)("onEventCreated (integración con el emulador)", () => {
     expect(day.insulin.doses.map((d: { eventId: string }) => d.eventId).sort()).toEqual(["dose-child", "dose-parent"]);
   });
 
+  it("procesa una comida y una Tresiba de un padre y marca la Tresiba de hoy", async () => {
+    const familyId = `fam-meal-${Date.now()}`;
+    await db.doc(`families/${familyId}`).set({
+      childName: "Cesar",
+      childUid: "child1",
+      parents: { parent1: { name: "Mamá" } },
+      settings: {},
+      createdAt: Timestamp.now(),
+    });
+    const at = Timestamp.now();
+    const meal = db.doc(`families/${familyId}/events/meal1`);
+    const basal = db.doc(`families/${familyId}/events/basal1`);
+    await meal.set({ type: "meal", createdBy: "parent1", createdAt: at, clientAt: at, source: "app", carbsGrams: 45 });
+    await basal.set({ type: "basal_dose", createdBy: "parent1", createdAt: at, clientAt: at, source: "app", doseUnits: 20 });
+    const processed = await waitFor(async () => {
+      const [m, b] = await Promise.all([meal.get(), basal.get()]);
+      return m.get("processedAt") && b.get("processedAt") ? { m: m.data(), b: b.data() } : undefined;
+    });
+    expect(processed.m?.senderName).toBe("Mamá");
+    expect(processed.b?.senderName).toBe("Mamá");
+    const metaSnap = await waitFor(async () => {
+      const snap = await db.doc(`families/${familyId}/meta/basal`).get();
+      return snap.exists ? snap : undefined;
+    });
+    expect((metaSnap.get("doneDates") as string[]).length).toBe(1);
+  });
+
   it("marca syncedLate cuando createdAt llega más de 120s después de clientAt", async () => {
     const familyId = `fam-late-${Date.now()}`;
     await db.doc(`families/${familyId}`).set({

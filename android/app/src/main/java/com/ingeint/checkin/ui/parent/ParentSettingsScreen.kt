@@ -62,6 +62,7 @@ fun ParentSettingsScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var draft by remember(state.settings) { mutableStateOf(state.settings) }
+    var basalDraft by remember(state.basalPlan) { mutableStateOf(state.basalPlan) }
 
     LaunchedEffect(state.leftFamily) {
         if (state.leftFamily) onLeftFamily()
@@ -89,10 +90,11 @@ fun ParentSettingsScreen(
             item { ScheduleSection(draft, onChange = { draft = it }) }
             item { ThresholdsSection(draft, onChange = { draft = it }) }
             item { SosSection(draft, childName, onChange = { draft = it }) }
+            item { BasalSection(basalDraft, onChange = { basalDraft = it }) }
 
             item {
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { viewModel.save(draft) }, enabled = !state.loading, colors = brandButtonColors()) {
+                Button(onClick = { viewModel.save(draft, basalDraft) }, enabled = !state.loading, colors = brandButtonColors()) {
                     Text(stringResource(R.string.parent_settings_save))
                 }
                 state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -235,6 +237,38 @@ private fun SosSection(settings: ReminderSettings, childName: String, onChange: 
             label = { Text(stringResource(R.string.parent_settings_child_phone, childName)) },
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun BasalSection(plan: BasalPlanDraft, onChange: (BasalPlanDraft) -> Unit) {
+    Column {
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
+        Text(stringResource(R.string.parent_settings_basal_title), style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.parent_settings_basal_enabled), modifier = Modifier.weight(1f))
+            Switch(checked = plan.enabled, onCheckedChange = { onChange(plan.copy(enabled = it)) })
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            NumberField(
+                label = stringResource(R.string.parent_settings_basal_units),
+                value = plan.units,
+                onChange = { onChange(plan.copy(units = it)) },
+                modifier = Modifier.weight(1f),
+            )
+            TextField121(
+                label = stringResource(R.string.parent_settings_basal_time),
+                value = plan.time,
+                onChange = { onChange(plan.copy(time = it)) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.parent_settings_basal_hint), style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(8.dp))
     }
 }
 

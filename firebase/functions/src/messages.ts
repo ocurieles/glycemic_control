@@ -128,3 +128,35 @@ export function formatDaySummaryMessage(counts: {
     body: `Hoy: ${counts.onTime}/${counts.expected} a tiempo, ${counts.late} tarde, ${counts.missed} sin respuesta`,
   };
 }
+
+/** Comida registrada por un padre (pedido 2026-10-15). Solo la ven los padres. */
+export function formatMealMessage(
+  senderName: string,
+  carbsGrams: number,
+  realAtMs: number,
+  timezone = DEFAULT_TIMEZONE,
+  glucose?: GlucoseInfo,
+  note?: string,
+): { title: string; body: string } {
+  const time = formatTime(realAtMs, timezone);
+  const valueSuffix = glucose ? ` · ${glucose.valueMgDl} mg/dL ${TREND_ARROWS[glucose.trend ?? 3] ?? ""}` : "";
+  const noteSuffix = note ? ` · ${note}` : "";
+  return { title: `${senderName} registró una comida`, body: `${carbsGrams} g de carbohidratos · ${time}${valueSuffix}${noteSuffix}` };
+}
+
+/** Tresiba (insulina basal) registrada por un padre. */
+export function formatBasalDoseMessage(
+  senderName: string,
+  doseUnits: number,
+  realAtMs: number,
+  timezone = DEFAULT_TIMEZONE,
+): { title: string; body: string } {
+  return { title: `${senderName} registró la Tresiba`, body: `${doseUnits} U · ${formatTime(realAtMs, timezone)}` };
+}
+
+export function formatBasalMissingMessage(childName: string, planTime: string): { title: string; body: string } {
+  return {
+    title: "Tresiba pendiente",
+    body: `Hoy todavía no se registró la Tresiba de ${childName} (prevista a las ${planTime}).`,
+  };
+}

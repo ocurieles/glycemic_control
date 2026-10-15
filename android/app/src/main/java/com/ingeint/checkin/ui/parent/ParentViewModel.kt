@@ -31,6 +31,7 @@ data class TimelineEvent(
     val glucoseTrend: Long?,
     val glucoseLevel: String?,
     val doseUnits: Double?,
+    val carbsGrams: Int? = null,
 )
 
 data class DayCompliance(
@@ -135,6 +136,7 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                                 glucoseTrend = (glucose?.get("trend") as? Number)?.toLong(),
                                 glucoseLevel = glucose?.get("level") as? String,
                                 doseUnits = (doc.get("doseUnits") as? Number)?.toDouble(),
+                                carbsGrams = (doc.get("carbsGrams") as? Number)?.toInt(),
                             )
                         }
                     _state.value = _state.value.copy(timeline = events, activeSos = findActiveSos(events))

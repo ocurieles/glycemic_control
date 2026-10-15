@@ -262,8 +262,11 @@ internal fun buildPayload(event: OutboxEvent, uid: String): Map<String, Any?> =
                 put("location", mapOf("lat" to event.lat, "lng" to event.lng, "accuracyM" to event.accuracyM))
             }
         }
-        if (event.type == OutboxEventType.INSULIN_DOSE) {
+        if (event.type == OutboxEventType.INSULIN_DOSE || event.type == OutboxEventType.BASAL_DOSE) {
             event.doseUnits?.let { put("doseUnits", it) }
+        }
+        if (event.type == OutboxEventType.MEAL) {
+            event.carbsGrams?.let { put("carbsGrams", it) }
         }
     }
 
@@ -276,4 +279,6 @@ private fun OutboxEventType.toContractName(): String =
         OutboxEventType.INSULIN_DOSE -> "insulin_dose"
         OutboxEventType.LOCATION_REQUEST -> "location_request"
         OutboxEventType.LOCATION_RESPONSE -> "location_response"
+        OutboxEventType.MEAL -> "meal"
+        OutboxEventType.BASAL_DOSE -> "basal_dose"
     }

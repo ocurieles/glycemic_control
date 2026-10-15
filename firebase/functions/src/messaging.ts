@@ -33,6 +33,9 @@ export const PUSH_TTL_SECONDS = {
   nudge: 300,
   sync: 3600,
   location_request: 120,
+  meal: 3600,
+  basal_dose: 3600,
+  basal_missing: 21600,
 } as const;
 
 export type PushType = keyof typeof PUSH_TTL_SECONDS;

@@ -12,8 +12,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+/** Plan diario de Tresiba (insulina basal): dosis habitual y hora prevista (pedido 2026-10-15). */
+data class BasalPlanDraft(val enabled: Boolean = false, val units: Int = 10, val time: String = "21:00")
+
 data class ParentSettingsUiState(
     val settings: ReminderSettings = ReminderSettings(),
+    val basalPlan: BasalPlanDraft = BasalPlanDraft(),
     val loading: Boolean = false,
     val errorMessage: String? = null,
     val savedMessage: String? = null,
@@ -45,12 +49,25 @@ class ParentSettingsViewModel(private val container: AppContainer) : ViewModel()
             val snap = container.firestore.collection("families").document(familyId).get().await()
             @Suppress("UNCHECKED_CAST")
             val map = snap.get("settings") as? Map<String, Any?> ?: return
-            _state.value = _state.value.copy(settings = ReminderSettings.fromMap(map))
+            @Suppress("UNCHECKED_CAST")
+            val basal = snap.get("basalPlan") as? Map<String, Any?>
+            _state.value =
+                _state.value.copy(
+                    settings = ReminderSettings.fromMap(map),
+                    basalPlan =
+                        basal?.let {
+                            BasalPlanDraft(
+                                enabled = it["enabled"] as? Boolean ?: false,
+                                units = (it["units"] as? Number)?.toInt() ?: 10,
+                                time = it["time"] as? String ?: "21:00",
+                            )
+                        } ?: _state.value.basalPlan,
+                )
         }
     }
 
-    fun save(newSettings: ReminderSettings) {
-        val error = validate(newSettings)
+    fun save(newSettings: ReminderSettings, basal: BasalPlanDraft = _state.value.basalPlan) {
+        val error = validate(newSettings) ?: validateBasal(basal)
         if (error != null) {
             _state.value = _state.value.copy(errorMessage = error)
             return
@@ -60,11 +77,16 @@ class ParentSettingsViewModel(private val container: AppContainer) : ViewModel()
             _state.value = _state.value.copy(loading = true, errorMessage = null, savedMessage = null)
             runCatching {
                 container.firestore.collection("families").document(familyId)
-                    .update("settings", settingsToMap(newSettings))
+                    .update(
+                        "settings",
+                        settingsToMap(newSettings),
+                        "basalPlan",
+                        mapOf("enabled" to basal.enabled, "units" to basal.units, "time" to basal.time),
+                    )
                     .await()
             }.onSuccess {
                 container.prefs.saveSettings(newSettings)
-                _state.value = _state.value.copy(loading = false, savedMessage = "Guardado.", settings = newSettings)
+                _state.value = _state.value.copy(loading = false, savedMessage = "Guardado.", settings = newSettings, basalPlan = basal)
             }.onFailure { e ->
                 _state.value = _state.value.copy(loading = false, errorMessage = e.message ?: "No se pudo guardar.")
             }
@@ -136,6 +158,12 @@ class ParentSettingsViewModel(private val container: AppContainer) : ViewModel()
         if (s.lowThreshold !in 40..120) return "El umbral bajo debe estar entre 40 y 120."
         if (s.highThreshold !in 120..400) return "El umbral alto debe estar entre 120 y 400."
         if (s.smsNumbers.size > 3) return "Máximo 3 números para el SOS por SMS."
+        return null
+    }
+
+    private fun validateBasal(b: BasalPlanDraft): String? {
+        if (b.units !in 1..80) return "La dosis de Tresiba debe estar entre 1 y 80 unidades."
+        if (!isHhmm(b.time)) return "Hora de Tresiba inválida."
         return null
     }
 

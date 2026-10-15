@@ -20,6 +20,7 @@ import java.time.ZoneId
 
 private const val TAG = "StatsViewModel"
 private const val MAX_DAYS = 30
+private val TRACKED_TYPES = setOf("checkin", "insulin_dose", "meal", "basal_dose")
 
 data class StatsUiState(
     val periodDays: Int = 14,
@@ -27,6 +28,7 @@ data class StatsUiState(
     val error: Boolean = false,
     val childName: String = "",
     val stats: StatsResult? = null,
+    val advice: AdvisorResult? = null,
 )
 
 /** Estadísticas de glicemia e insulina (pedido 2026-10-15): solo lecturas de Firestore. */
@@ -58,7 +60,7 @@ class StatsViewModel(private val container: AppContainer) : ViewModel() {
                 events =
                     snap.documents.mapNotNull { doc ->
                         val type = doc.getString("type")
-                        if (type != "checkin" && type != "insulin_dose") return@mapNotNull null
+                        if (type == null || type !in TRACKED_TYPES) return@mapNotNull null
                         val at = (doc.getTimestamp("realAt") ?: doc.getTimestamp("clientAt"))?.toDate()?.time
                             ?: return@mapNotNull null
                         @Suppress("UNCHECKED_CAST")
@@ -69,6 +71,7 @@ class StatsViewModel(private val container: AppContainer) : ViewModel() {
                             glucose = (glucose?.get("valueMgDl") as? Number)?.toInt(),
                             trend = (glucose?.get("trend") as? Number)?.toInt(),
                             units = (doc.get("doseUnits") as? Number)?.toDouble(),
+                            carbs = (doc.get("carbsGrams") as? Number)?.toInt(),
                         )
                     }
                 _state.value = _state.value.copy(childName = name)
@@ -96,7 +99,15 @@ class StatsViewModel(private val container: AppContainer) : ViewModel() {
                 s.highThreshold,
                 System.currentTimeMillis(),
             )
-        _state.value = _state.value.copy(stats = stats, loading = false)
+        val advice =
+            CarbAdvisor.compute(
+                events,
+                runCatching { ZoneId.of(s.timezone) }.getOrDefault(ZoneId.of("America/Caracas")),
+                s.lowThreshold,
+                s.highThreshold,
+                System.currentTimeMillis(),
+            )
+        _state.value = _state.value.copy(stats = stats, advice = advice, loading = false)
     }
 
     suspend fun createPdf(): File? {

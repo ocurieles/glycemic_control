@@ -110,6 +110,7 @@ La versión ejecutable está en **`docs/schedule-vectors.json`**, que es la fuen
 | `libreConfigured` | Functions |
 | `libreStatus` | Functions — `{ ok, lastError?, lastSuccessAt? }` |
 | `lastCheckinAt` | Functions — máximo `realAt` de las revisiones |
+| `basalPlan` | padre (reglas validan) | `{ enabled, units (1–80), time "HH:mm" }`: dosis habitual y hora prevista de la Tresiba |
 | `lastLocation` | Functions — `{ lat, lng, atMillis, replyTo }`, respuesta más reciente a `location_request` |
 | `createdAt` | Functions |
 
@@ -118,7 +119,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 
 | Campo | Escribe | Notas |
 |---|---|---|
-| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response` (niño); `parent_message`, `sos_ack`, `location_request`, `insulin_dose` (padre) |
+| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response` (niño); `parent_message`, `sos_ack`, `location_request`, `insulin_dose`, `meal`, `basal_dose` (padre) |
 | `createdBy` | cliente | = `request.auth.uid` |
 | `createdAt` | cliente | `serverTimestamp()`; las reglas exigen `== request.time` |
 | `clientAt` | cliente | Timestamp del momento real del toque, **ya corregido** con `clockOffsetMs` |
@@ -129,7 +130,8 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 | `location` | cliente | `{ lat, lng, accuracyM }` (SOS y `location_response`) |
 | `smsSent` | cliente | SOS: se envió SMS de respaldo |
 | `replyTo` | cliente | `sos_ack`: id del SOS; `location_response`: id del `location_request` |
-| `doseUnits` | cliente | `insulin_dose`: uno de `0.5, 1, 1.5, 2, 2.5, 3` (validado en las reglas) |
+| `doseUnits` | cliente | `insulin_dose`: uno de `0.5, 1, 1.5, 2, 2.5, 3`; `basal_dose` (Tresiba): entero 1–80 (validado en las reglas) |
+| `carbsGrams` | cliente | `meal`: gramos de carbohidratos, entero 1–300; la nota opcional va en `text` |
 | `senderName` | Functions | |
 | `syncedLate` | Functions | `createdAt − realAt > 120 s` |
 | `glucose` | Functions | `{ valueMgDl, trend (1–5), readingAt, source: "latest"\|"graph", level: "low"\|"normal"\|"high" }` |
@@ -157,6 +159,9 @@ El resumen de cumplimiento se recalcula con cada revisión y en cada corrida del
 
 ### `families/{familyId}/meta/pushBuffer` (solo Functions)
 Agrupa ráfagas de `checkin_late` (ver 07): `{ pending: [{ eventId, realAt }], windowStart, flushAt }`. En cada `checkin_late`, en una transacción: si `pending` tiene 3 o más elementos en menos de 60 s, se agrega a la lista en vez de enviar el push. El scheduler o la siguiente revisión envían el push agrupado cuando `now ≥ flushAt` (`windowStart` + 60 s) y vacían la lista.
+
+### `families/{familyId}/meta/basal` (solo Functions)
+`{ doneDates: ["yyyy-MM-dd"], alertedDate }`: días con Tresiba registrada y último día en que se avisó que faltaba.
 
 ### `families/{familyId}/private/libre` (solo Functions)
 `{ credentialsEnc, patientId, patientName, region, sessionEnc, sessionExpiresAt }`

@@ -21,6 +21,8 @@ import com.ingeint.checkin.ui.child.ChildViewModel
 import com.ingeint.checkin.ui.diagnostics.DiagnosticsScreen
 import com.ingeint.checkin.ui.parent.InsulinScreen
 import com.ingeint.checkin.ui.parent.InsulinViewModel
+import com.ingeint.checkin.ui.parent.LogScreen
+import com.ingeint.checkin.ui.parent.LogViewModel
 import com.ingeint.checkin.ui.parent.ParentHomeScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsViewModel
@@ -44,6 +46,7 @@ private object Routes {
     const val ABOUT = "about"
     const val INSULIN_CALENDAR = "insulin_calendar"
     const val STATS = "stats"
+    const val LOG = "log/{kind}"
 
     fun permissions(role: String, childName: String) = "permissions/$role/$childName"
 
@@ -122,7 +125,14 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
                 onOpenSettings = { navController.navigate(Routes.parentSettings(childName)) },
                 onOpenInsulin = { navController.navigate(Routes.INSULIN_CALENDAR) },
                 onOpenStats = { navController.navigate(Routes.STATS) },
+                onOpenLog = { kind -> navController.navigate("log/$kind") },
             )
+        }
+
+        composable(Routes.LOG) { backStackEntry ->
+            val kind = backStackEntry.arguments?.getString("kind") ?: "meal"
+            val viewModel: LogViewModel = viewModel(factory = AppViewModelFactory(container) { LogViewModel(it) })
+            LogScreen(viewModel, initialKind = kind, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.STATS) {

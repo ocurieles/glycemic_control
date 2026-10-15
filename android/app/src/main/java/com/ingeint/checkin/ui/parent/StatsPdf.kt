@@ -183,8 +183,13 @@ object StatsPdf {
             }
 
             ensure(40f)
-            val cols = floatArrayOf(MARGIN, MARGIN + 110f, MARGIN + 210f, MARGIN + 290f)
-            val head = arrayOf("Fecha", "Unidades", "Dosis", "Glicemia prom.")
+            line(
+                "Carbohidratos: ${s.avgDailyCarbs} g al día en promedio (${s.totalMeals} comidas registradas)",
+                body,
+                18f,
+            )
+            val cols = floatArrayOf(MARGIN, MARGIN + 60f, MARGIN + 130f, MARGIN + 190f, MARGIN + 270f, MARGIN + 360f)
+            val head = arrayOf("Fecha", "Rápida (U)", "Dosis", "Tresiba (U)", "Carbohidratos", "Glicemia prom.")
             head.forEachIndexed { i, t -> page.canvas.drawText(t, cols[i], y + 11f, paint(10f, bold = true)) }
             y += 18f
             val p = paint(10f)
@@ -193,7 +198,9 @@ object StatsPdf {
                 page.canvas.drawText(d.date.format(DATE_SHORT), cols[0], y + 10f, p)
                 page.canvas.drawText(if (d.doses == 0) "—" else formatOneDecimal(d.units), cols[1], y + 10f, p)
                 page.canvas.drawText(if (d.doses == 0) "—" else d.doses.toString(), cols[2], y + 10f, p)
-                page.canvas.drawText(d.avgGlucose?.let { "$it mg/dL" } ?: "—", cols[3], y + 10f, p)
+                page.canvas.drawText(if (d.basalUnits == 0.0) "—" else formatOneDecimal(d.basalUnits), cols[3], y + 10f, p)
+                page.canvas.drawText(if (d.carbs == 0) "—" else "${d.carbs} g", cols[4], y + 10f, p)
+                page.canvas.drawText(d.avgGlucose?.let { "$it mg/dL" } ?: "—", cols[5], y + 10f, p)
                 y += 14f
             }
         }

@@ -1,6 +1,14 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { formatCheckinMessage, formatInsulinDoseMessage, formatSosMessage, formatTime } from "../messages";
+import {
+  formatBasalDoseMessage,
+  formatBasalMissingMessage,
+  formatCheckinMessage,
+  formatInsulinDoseMessage,
+  formatMealMessage,
+  formatSosMessage,
+  formatTime,
+} from "../messages";
 
 const tz = "America/Caracas";
 function at(hhmm: string): number {
@@ -98,5 +106,13 @@ describe("messages.ts — textos exactos de docs/04", () => {
     });
     expect(title).toBe("🆘 Cesar necesita ayuda");
     expect(body).toBe("10:42 a. m. · Toca para ver ubicación");
+  });
+
+  it("comida, Tresiba y aviso de Tresiba pendiente", () => {
+    const meal = formatMealMessage("Mamá", 45, at("08:05"), undefined, { valueMgDl: 110, trend: 3, level: "normal" }, "arepa");
+    expect(meal.title).toBe("Mamá registró una comida");
+    expect(meal.body).toBe("45 g de carbohidratos · 8:05 a. m. · 110 mg/dL → · arepa");
+    expect(formatBasalDoseMessage("Papá", 20, at("21:00")).body).toBe("20 U · 9:00 p. m.");
+    expect(formatBasalMissingMessage("Cesar", "21:00").body).toContain("Cesar");
   });
 });

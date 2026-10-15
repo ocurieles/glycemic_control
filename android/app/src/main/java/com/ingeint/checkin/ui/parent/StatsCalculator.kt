@@ -8,7 +8,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /** Un `checkin` o `insulin_dose` con su lectura de glicemia (si la hubo). */
-data class StatEvent(val type: String, val atMillis: Long, val glucose: Int?, val trend: Int?, val units: Double?)
+data class StatEvent(
+    val type: String,
+    val atMillis: Long,
+    val glucose: Int?,
+    val trend: Int?,
+    val units: Double?,
+    val carbs: Int? = null,
+)
 
 data class GlucoseStats(
     val count: Int,
@@ -25,7 +32,14 @@ data class GlucoseStats(
 
 data class HourPoint(val hour: Int, val mean: Int, val count: Int)
 
-data class DayInsulin(val date: LocalDate, val units: Double, val doses: Int, val avgGlucose: Int?)
+data class DayInsulin(
+    val date: LocalDate,
+    val units: Double,
+    val doses: Int,
+    val avgGlucose: Int?,
+    val basalUnits: Double = 0.0,
+    val carbs: Int = 0,
+)
 
 /** Glicemia al aplicar la dosis vs. la revisión siguiente (sin otra dosis en medio). */
 data class DoseResponse(val pairs: Int, val avgBefore: Int, val avgAfter: Int, val avgDelta: Int, val avgMinutes: Int)
@@ -42,6 +56,8 @@ data class StatsResult(
     val dosesPerDay: Double,
     val totalDoses: Int,
     val response: DoseResponse?,
+    val totalMeals: Int,
+    val avgDailyCarbs: Int,
     val lowThreshold: Int,
     val highThreshold: Int,
 )
@@ -91,9 +107,14 @@ object StatsCalculator {
                     dayDoses.sumOf { it.units ?: 0.0 },
                     dayDoses.size,
                     if (dayReadings.isEmpty()) null else dayReadings.average().roundToInt(),
+                    basalUnits = inPeriod.filter { it.type == "basal_dose" && dateOf(it) == date }.sumOf { it.units ?: 0.0 },
+                    carbs = inPeriod.filter { it.type == "meal" && dateOf(it) == date }.sumOf { it.carbs ?: 0 },
                 )
             }
 
+        val meals = inPeriod.filter { it.type == "meal" && it.carbs != null }
+        val firstMealDay = meals.minOfOrNull { dateOf(it) }
+        val mealDays = if (firstMealDay == null) 1 else ChronoUnit.DAYS.between(maxOf(firstDay, firstMealDay), today).toInt() + 1
         val totalUnits = doses.sumOf { it.units ?: 0.0 }
         val firstDoseDay = doses.minOfOrNull { dateOf(it) }
         val effectiveDays =
@@ -111,6 +132,8 @@ object StatsCalculator {
             dosesPerDay = doses.size.toDouble() / effectiveDays,
             totalDoses = doses.size,
             response = doseResponse(inPeriod),
+            totalMeals = meals.size,
+            avgDailyCarbs = meals.sumOf { it.carbs ?: 0 } / mealDays,
             lowThreshold = low,
             highThreshold = high,
         )
