@@ -35,6 +35,7 @@ data class AdvisorResult(
 object CarbAdvisor {
     const val MIN_MEALS = 5
     private const val AFTER_MIN_MINUTES = 60
+    private const val TARGET_AFTER_MINUTES = 120L
     private const val AFTER_MAX_MINUTES = 240
     private const val RECENT_READING_MS = 3 * 3600_000L
 
@@ -55,16 +56,23 @@ object CarbAdvisor {
             val grams = meal.carbs
             if (meal.type != "meal" || grams == null) continue
             val slot = slotOf(Instant.ofEpochMilli(meal.atMillis).atZone(zone).hour)
+            // Con lecturas cada 15 min se toma la más cercana a 2 h después de comer.
+            var best: Int? = null
+            var bestDistance = Long.MAX_VALUE
             for (j in i + 1 until sorted.size) {
                 val next = sorted[j]
                 val minutes = (next.atMillis - meal.atMillis) / 60_000
                 if (minutes > AFTER_MAX_MINUTES || next.type == "meal") break
                 val g = next.glucose
                 if (g != null && minutes >= AFTER_MIN_MINUTES) {
-                    outcomes += Triple(slot, grams, g in low..high)
-                    break
+                    val distance = kotlin.math.abs(minutes - TARGET_AFTER_MINUTES)
+                    if (distance < bestDistance) {
+                        best = g
+                        bestDistance = distance
+                    }
                 }
             }
+            best?.let { outcomes += Triple(slot, grams, it in low..high) }
         }
 
         val slots =

@@ -160,6 +160,9 @@ El resumen de cumplimiento se recalcula con cada revisión y en cada corrida del
 ### `families/{familyId}/meta/pushBuffer` (solo Functions)
 Agrupa ráfagas de `checkin_late` (ver 07): `{ pending: [{ eventId, realAt }], windowStart, flushAt }`. En cada `checkin_late`, en una transacción: si `pending` tiene 3 o más elementos en menos de 60 s, se agrega a la lista en vez de enviar el push. El scheduler o la siguiente revisión envían el push agrupado cuando `now ≥ flushAt` (`windowStart` + 60 s) y vacían la lista.
 
+### `families/{familyId}/glucoseDays/{yyyy-MM-dd}` (solo Functions; lee solo un padre)
+Lecturas automáticas de glicemia cada 15 min (pedido 2026-10-16): `{ date, readings: { "<epoch segundos>": { v: mg/dL, tr?: 1–5 } } }`. La clave es el instante de la lectura, así que reescribir una lectura ya guardada no la duplica. Las escribe `recordGlucoseReadings`.
+
 ### `families/{familyId}/meta/basal` (solo Functions)
 `{ doneDates: ["yyyy-MM-dd"], alertedDate }`: días con Tresiba registrada y último día en que se avisó que faltaba.
 

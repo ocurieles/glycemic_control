@@ -218,6 +218,16 @@ describe("families/{fid}/events/{eid}", () => {
     }
   });
 
+  it("las lecturas automáticas solo las lee un padre y nadie las escribe desde el cliente", async () => {
+    await seedFamily();
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc(`families/${FAMILY_ID}/glucoseDays/2026-10-16`).set({ date: "2026-10-16", readings: {} });
+    });
+    await assertSucceeds(asParent().doc(`families/${FAMILY_ID}/glucoseDays/2026-10-16`).get());
+    await assertFails(asChild().doc(`families/${FAMILY_ID}/glucoseDays/2026-10-16`).get());
+    await assertFails(asParent().doc(`families/${FAMILY_ID}/glucoseDays/2026-10-17`).set({ date: "2026-10-17" }));
+  });
+
   it("un padre puede guardar el plan de Tresiba y se valida", async () => {
     await seedFamily();
     await assertSucceeds(asParent().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 20, time: "21:00" } }));

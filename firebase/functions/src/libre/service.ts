@@ -256,3 +256,32 @@ export async function removeCredentials(familyId: string): Promise<{ ok: true }>
     .update({ libreConfigured: false, libreStatus: { ok: false, lastError: null } });
   return { ok: true };
 }
+
+/**
+ * Lecturas recientes (la actual + el historial `graph`, ~12 h) para guardarlas cada 15
+ * min (pedido 2026-10-16). No toca `libreStatus` a propósito: cada `update` de `families/{fid}`
+ * dispara `onFamilyUpdated`, y esto corre 96 veces al día por familia.
+ */
+export async function fetchRecentReadings(
+  familyId: string,
+  appVersion: string,
+  secret: string,
+): Promise<{ items: GlucoseItem[] } | { error: LibreLookupErrorCode }> {
+  const snap = await privateDocRef(familyId).get();
+  const doc = (snap.data() ?? {}) as PrivateLibreDoc;
+  if (!doc.credentialsEnc) return { error: "not_configured" };
+  try {
+    return await withSession(familyId, doc, appVersion, secret, async (session) => {
+      const connections = await fetchConnections(session, appVersion);
+      const connection = findConnection(connections, doc.patientId);
+      if (!connection) return { error: "no_data" as const };
+      const graph = await fetchGraph(session, appVersion, connection.patientId);
+      const items = connection.glucose ? [...graph, connection.glucose] : graph;
+      return { items };
+    });
+  } catch (err) {
+    const code: LibreLookupErrorCode = err instanceof LibreApiError ? err.code : "network";
+    logger.warn("fallo la lectura periódica de LibreLinkUp", { familyId, code, err });
+    return { error: code };
+  }
+}

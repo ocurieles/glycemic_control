@@ -92,6 +92,11 @@ service cloud.firestore {
         // update/delete: solo Functions (Admin SDK)
       }
 
+      match /glucoseDays/{day} {
+        allow read: if member(fid) && role() == 'parent';
+        // write: solo Functions (Admin SDK)
+      }
+
       match /days/{day} {
         allow read: if member(fid);
         // write: solo Functions (Admin SDK)

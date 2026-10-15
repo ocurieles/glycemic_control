@@ -101,4 +101,24 @@ class StatsCalculatorTest {
         assertEquals(107, r.glucose!!.mean)
         assertEquals(2.0, r.totalUnits, 0.001)
     }
+
+    @Test
+    fun `con lecturas automaticas se usan solo ellas y se calcula cobertura, GMI y CV`() {
+        val readings = (0 until 20).map { StatEvent("reading", at(15, 8) + it * 15 * 60_000L, 100 + it, 3, null) }
+        val r = StatsCalculator.compute(readings + checkin(15, 9, 400), 1, zone, 70, 180, now)
+        assertEquals(20, r.glucose!!.count)
+        assertEquals(20, r.continuousReadings)
+        assertNotNull(r.coveragePct)
+        assertEquals(3.31 + 0.02392 * 109.5, r.glucose!!.gmi, 0.06)
+        assertEquals(100.0, r.glucose!!.inRangePct, 0.001)
+    }
+
+    @Test
+    fun `con pocas lecturas automaticas se usan las puntuales`() {
+        val few = (0 until 3).map { StatEvent("reading", at(15, 8) + it * 15 * 60_000L, 100, 3, null) }
+        val r = StatsCalculator.compute(few + checkin(15, 9, 150), 1, zone, 70, 180, now)
+        assertEquals(0, r.continuousReadings)
+        assertEquals(4, r.glucose!!.count)
+        assertNull(r.coveragePct)
+    }
 }

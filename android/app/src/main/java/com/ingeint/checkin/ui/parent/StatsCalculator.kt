@@ -24,6 +24,10 @@ data class GlucoseStats(
     val min: Int,
     val max: Int,
     val sd: Int,
+    /** Coeficiente de variación (desv. típica / promedio), en %. */
+    val cv: Int,
+    /** Indicador de gestión de glucosa (GMI) estimado con el promedio, en %. */
+    val gmi: Double,
     val lowPct: Double,
     val inRangePct: Double,
     val highPct: Double,
@@ -56,6 +60,9 @@ data class StatsResult(
     val dosesPerDay: Double,
     val totalDoses: Int,
     val response: DoseResponse?,
+    /** Lecturas automáticas (cada 15 min) usadas; 0 si solo hay lecturas puntuales. */
+    val continuousReadings: Int,
+    val coveragePct: Int?,
     val totalMeals: Int,
     val avgDailyCarbs: Int,
     val lowThreshold: Int,
@@ -69,6 +76,8 @@ data class StatsResult(
  */
 object StatsCalculator {
     private const val VERY_HIGH = 250
+    private const val MIN_CONTINUOUS = 10
+    private const val READING_INTERVAL_MS = 15 * 60_000L
     private const val RESPONSE_MIN_MINUTES = 20
     private const val RESPONSE_MAX_MINUTES = 300
 
@@ -86,12 +95,19 @@ object StatsCalculator {
         val inPeriod = events.filter { it.atMillis >= startMillis }.sortedBy { it.atMillis }
         fun dateOf(e: StatEvent) = Instant.ofEpochMilli(e.atMillis).atZone(zone).toLocalDate()
 
-        val readings = inPeriod.mapNotNull { it.glucose }
+        // Con lecturas automáticas suficientes se usan solo ellas (no se mezclan con las de
+        // las revisiones, que serían las mismas lecturas contadas dos veces).
+        val glucoseEvents = inPeriod.filter { it.glucose != null }
+        val continuous = glucoseEvents.filter { it.type == "reading" }
+        val useContinuous = continuous.size >= MIN_CONTINUOUS
+        val base = if (useContinuous) continuous else glucoseEvents
+        val readings = base.mapNotNull { it.glucose }
         val glucose = if (readings.isEmpty()) null else glucoseStats(readings, low, high)
+        val expected = ((nowMillis - startMillis) / READING_INTERVAL_MS).coerceAtLeast(1)
+        val coveragePct = if (useContinuous) minOf(100L, continuous.size * 100L / expected).toInt() else null
 
         val hourly =
-            inPeriod
-                .filter { it.glucose != null }
+            base
                 .groupBy { Instant.ofEpochMilli(it.atMillis).atZone(zone).hour }
                 .map { (h, list) -> HourPoint(h, list.mapNotNull { it.glucose }.average().roundToInt(), list.size) }
                 .sortedBy { it.hour }
@@ -101,7 +117,7 @@ object StatsCalculator {
             (0 until periodDays).map { i ->
                 val date = firstDay.plusDays(i.toLong())
                 val dayDoses = doses.filter { dateOf(it) == date }
-                val dayReadings = inPeriod.filter { dateOf(it) == date }.mapNotNull { it.glucose }
+                val dayReadings = base.filter { dateOf(it) == date }.mapNotNull { it.glucose }
                 DayInsulin(
                     date,
                     dayDoses.sumOf { it.units ?: 0.0 },
@@ -132,6 +148,8 @@ object StatsCalculator {
             dosesPerDay = doses.size.toDouble() / effectiveDays,
             totalDoses = doses.size,
             response = doseResponse(inPeriod),
+            continuousReadings = if (useContinuous) continuous.size else 0,
+            coveragePct = coveragePct,
             totalMeals = meals.size,
             avgDailyCarbs = meals.sumOf { it.carbs ?: 0 } / mealDays,
             lowThreshold = low,
@@ -153,6 +171,8 @@ object StatsCalculator {
             min = sorted.first(),
             max = sorted.last(),
             sd = sd.roundToInt(),
+            cv = if (mean > 0) (sd / mean * 100).roundToInt() else 0,
+            gmi = Math.round((3.31 + 0.02392 * mean) * 10) / 10.0,
             lowPct = pct(readings.count { it < low }),
             inRangePct = pct(readings.count { it in low..high }),
             highPct = pct(readings.count { it > high && it <= VERY_HIGH }),

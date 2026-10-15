@@ -74,12 +74,38 @@ class StatsViewModel(private val container: AppContainer) : ViewModel() {
                             carbs = (doc.get("carbsGrams") as? Number)?.toInt(),
                         )
                     }
+                events = events + loadReadings(familyId, since)
                 _state.value = _state.value.copy(childName = name)
                 recompute()
             } catch (e: Exception) {
                 Log.w(TAG, "no se pudieron cargar las estadísticas", e)
                 _state.value = _state.value.copy(loading = false, error = true)
             }
+        }
+    }
+
+    /** Lecturas automáticas cada 15 min (`glucoseDays`, ver `readings.ts` del backend). */
+    private suspend fun loadReadings(familyId: String, sinceMillis: Long): List<StatEvent> {
+        val zone = runCatching { ZoneId.of(settings.timezone) }.getOrDefault(ZoneId.of("America/Caracas"))
+        val startKey = java.time.Instant.ofEpochMilli(sinceMillis).atZone(zone).toLocalDate().toString()
+        return try {
+            val snap =
+                container.firestore.collection("families").document(familyId).collection("glucoseDays")
+                    .whereGreaterThanOrEqualTo(com.google.firebase.firestore.FieldPath.documentId(), startKey)
+                    .get()
+                    .await()
+            snap.documents.flatMap { doc ->
+                @Suppress("UNCHECKED_CAST")
+                val readings = doc.get("readings") as? Map<String, Map<String, Any?>> ?: return@flatMap emptyList()
+                readings.mapNotNull { (sec, r) ->
+                    val at = sec.toLongOrNull()?.times(1000) ?: return@mapNotNull null
+                    val value = (r["v"] as? Number)?.toInt() ?: return@mapNotNull null
+                    StatEvent("reading", at, value, (r["tr"] as? Number)?.toInt(), null)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "no se pudieron cargar las lecturas automáticas", e)
+            emptyList()
         }
     }
 

@@ -83,7 +83,7 @@ object StatsPdf {
         private fun footer() {
             val c = page.canvas
             c.drawText(
-                "Basado en lecturas puntuales tomadas al revisarse y al registrar insulina; no es una curva continua del sensor.",
+                "Lecturas del sensor cada 15 min cuando están disponibles; si no, lecturas puntuales al revisarse y al registrar insulina.",
                 MARGIN,
                 810f,
                 small,
@@ -125,6 +125,12 @@ object StatsPdf {
             }
             line("Lecturas: ${g.count} · Promedio: ${g.mean} mg/dL · Mediana: ${g.median} mg/dL", body)
             line("Mínimo: ${g.min} · Máximo: ${g.max} · Desviación típica: ±${g.sd} mg/dL", body)
+            if (s.continuousReadings > 0) {
+                line(
+                    "GMI estimado: ${formatOneDecimal(g.gmi)} % · Variabilidad (CV): ${g.cv} % · Datos disponibles: ${s.coveragePct ?: 0} %",
+                    body,
+                )
+            }
             line("Rango objetivo: ${s.lowThreshold}–${s.highThreshold} mg/dL", body, 22f)
 
             ensure(60f)

@@ -134,6 +134,16 @@ private fun StatsContent(s: StatsResult, advice: AdvisorResult?) {
                 Triple(stringResource(R.string.parent_stats_variation), "±${g.sd}", "mg/dL"),
             ),
         )
+        if (s.continuousReadings > 0) {
+            Spacer(Modifier.height(8.dp))
+            MetricRow(
+                listOf(
+                    Triple(stringResource(R.string.parent_stats_gmi), formatOneDecimal(g.gmi), "%"),
+                    Triple(stringResource(R.string.parent_stats_cv), "${g.cv}", "%"),
+                    Triple(stringResource(R.string.parent_stats_coverage), "${s.coveragePct ?: 0}", "%"),
+                ),
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Text(
             stringResource(R.string.parent_stats_time_in_range, s.lowThreshold, s.highThreshold),
@@ -211,7 +221,11 @@ private fun StatsContent(s: StatsResult, advice: AdvisorResult?) {
 
     Spacer(Modifier.height(16.dp))
     Text(
-        stringResource(R.string.parent_stats_footnote, g?.count ?: 0),
+        if (s.continuousReadings > 0) {
+            stringResource(R.string.parent_stats_footnote_continuous, g?.count ?: 0)
+        } else {
+            stringResource(R.string.parent_stats_footnote, g?.count ?: 0)
+        },
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

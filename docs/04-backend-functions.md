@@ -79,6 +79,9 @@ Para cada familia con `settings.enabled == true` y `childUid`:
    - lo agrega a `missedAlerted` (con `arrayUnion`, en una transacción).
 4. Si es la primera corrida después de `endTime`, envía a los padres el push `day_summary` ("Hoy: 33/36 a tiempo, 2 tarde, 1 sin respuesta"). Se marca con `days/{fecha}.summarySent = true`.
 
+### `recordGlucoseReadings` — `every 15 minutes` (`readings.ts`)
+Para cada familia con `libreConfigured`, pide a LibreLinkUp la lectura actual y el historial `graph` (~12 h, así se cubren huecos si una corrida falla) y las guarda en `glucoseDays/{fecha}` con `merge` (idempotente). No actualiza `libreStatus` (cada update de `families/{fid}` dispara `onFamilyUpdated`). Un fallo de LibreLinkUp solo se registra en el log. Costo: unas 2 escrituras por corrida y familia.
+
 ### Aviso de Tresiba pendiente (`basal.ts`)
 En cada corrida de `checkMissedSlots`, si `families.basalPlan.enabled` y pasaron 30 min de la hora prevista sin Tresiba registrada hoy (`meta/basal.doneDates`) y sin aviso previo hoy (`alertedDate`), push `basal_missing` a los padres. Una vez por día.
 
