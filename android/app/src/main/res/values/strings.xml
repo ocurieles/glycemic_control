@@ -115,6 +115,7 @@
 
     <string name="parent_stats_title">Estadísticas</string>
     <string name="parent_stats_share_pdf">Compartir resumen en PDF</string>
+    <string name="parent_stats_today">Hoy</string>
     <string name="parent_stats_period_days">%1$d días</string>
     <string name="parent_stats_error">No se pudieron cargar las estadísticas. Revisa tu conexión e inténtalo de nuevo.</string>
     <string name="parent_stats_glucose">Glicemia</string>

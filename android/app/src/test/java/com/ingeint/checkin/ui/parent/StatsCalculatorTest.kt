@@ -91,4 +91,14 @@ class StatsCalculatorTest {
         assertEquals(2, h.first { it.hour == 8 }.count)
         assertEquals(120, h.first { it.hour == 9 }.mean)
     }
+
+    @Test
+    fun `solo hoy considera unicamente el dia actual`() {
+        val events = listOf(checkin(14, 8, 300), checkin(15, 8, 100), checkin(15, 9, 120), dose(15, 8, 2.0, 100))
+        val r = StatsCalculator.compute(events, 1, zone, 70, 180, now)
+        assertEquals(1, r.days.size)
+        assertEquals(3, r.glucose!!.count)
+        assertEquals(107, r.glucose!!.mean)
+        assertEquals(2.0, r.totalUnits, 0.001)
+    }
 }

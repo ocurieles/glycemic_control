@@ -96,11 +96,15 @@ fun StatsScreen(viewModel: StatsViewModel, onBack: () -> Unit) {
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(7, 14, 30).forEach { days ->
+                listOf(1, 7, 14, 30).forEach { days ->
                     FilterChip(
                         selected = state.periodDays == days,
                         onClick = { viewModel.setPeriod(days) },
-                        label = { Text(stringResource(R.string.parent_stats_period_days, days)) },
+                        label = {
+                            Text(
+                                if (days == 1) stringResource(R.string.parent_stats_today) else stringResource(R.string.parent_stats_period_days, days),
+                            )
+                        },
                     )
                 }
             }
@@ -165,9 +169,11 @@ private fun StatsContent(s: StatsResult, advice: AdvisorResult?) {
         ),
     )
     Spacer(Modifier.height(12.dp))
-    Text(stringResource(R.string.parent_stats_units_per_day), style = MaterialTheme.typography.bodySmall)
-    Spacer(Modifier.height(6.dp))
-    DayChart(s)
+    if (s.days.size > 1) {
+        Text(stringResource(R.string.parent_stats_units_per_day), style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(6.dp))
+        DayChart(s)
+    }
 
     Spacer(Modifier.height(24.dp))
     Text(stringResource(R.string.parent_stats_food), style = MaterialTheme.typography.titleMedium)

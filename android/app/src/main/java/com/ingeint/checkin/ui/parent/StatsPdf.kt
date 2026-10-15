@@ -105,7 +105,11 @@ object StatsPdf {
         fun header(childName: String, s: StatsResult) {
             line("Resumen de glicemia e insulina", title, 28f)
             line(
-                "$childName · últimos ${s.periodDays} días (${s.firstDay.format(DATE_LONG)} – ${s.lastDay.format(DATE_LONG)})",
+                if (s.periodDays == 1) {
+                    "$childName · hoy (${s.lastDay.format(DATE_LONG)})"
+                } else {
+                    "$childName · últimos ${s.periodDays} días (${s.firstDay.format(DATE_LONG)} – ${s.lastDay.format(DATE_LONG)})"
+                },
                 body,
                 18f,
             )
