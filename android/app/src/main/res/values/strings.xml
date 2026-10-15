@@ -112,4 +112,25 @@
     <string name="about_safety_body">Esta app es una ayuda de comunicación y de hábitos. No sustituye las alarmas de LibreLink/LibreLinkUp ni las indicaciones médicas. Las alarmas de hipoglucemia e hiperglucemia deben seguir activas en LibreLinkUp.</string>
     <string name="about_not_a_medical_device">No es un dispositivo médico ni reemplaza al sensor.</string>
     <string name="about_developed_by">Producto desarrollado por INGEINT C.A.</string>
+
+    <string name="parent_stats_title">Estadísticas</string>
+    <string name="parent_stats_share_pdf">Compartir resumen en PDF</string>
+    <string name="parent_stats_period_days">%1$d días</string>
+    <string name="parent_stats_error">No se pudieron cargar las estadísticas. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="parent_stats_glucose">Glicemia</string>
+    <string name="parent_stats_no_glucose">Todavía no hay lecturas de glicemia en este período.</string>
+    <string name="parent_stats_mean">Promedio</string>
+    <string name="parent_stats_min_max">Mín – máx</string>
+    <string name="parent_stats_variation">Variación</string>
+    <string name="parent_stats_time_in_range">Tiempo en rango (%1$d–%2$d)</string>
+    <string name="parent_stats_range_legend">Bajo %1$d %% · En rango %2$d %% · Alto %3$d %% · Muy alto (>250) %4$d %%</string>
+    <string name="parent_stats_by_hour">Promedio por hora del día</string>
+    <string name="parent_stats_insulin">Insulina</string>
+    <string name="parent_stats_daily_avg">Promedio diario</string>
+    <string name="parent_stats_doses_per_day">Dosis por día</string>
+    <string name="parent_stats_total">Total</string>
+    <string name="parent_stats_units_per_day">Unidades por día</string>
+    <string name="parent_stats_response_title">Antes y después de la dosis</string>
+    <string name="parent_stats_response_body">Al aplicar la dosis la glicemia promedio era %1$d mg/dL; en la revisión siguiente, %2$d mg/dL (%3$+d), unos %5$d min después. Basado en %4$d dosis.</string>
+    <string name="parent_stats_footnote">Basado en %1$d lecturas tomadas al revisarse y al registrar insulina. No es una curva continua del sensor.</string>
 </resources>

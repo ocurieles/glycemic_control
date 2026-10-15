@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Vaccines
@@ -58,7 +59,7 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}) {
+fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onOpenInsulin: () -> Unit = {}, onOpenStats: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     var showInsulinLog by remember { mutableStateOf(false) }
@@ -70,6 +71,9 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
                 actions = {
                     IconButton(onClick = { showInsulinLog = true }) {
                         Icon(Icons.Filled.Vaccines, contentDescription = stringResource(R.string.parent_insulin_log_title))
+                    }
+                    IconButton(onClick = onOpenStats) {
+                        Icon(Icons.Filled.BarChart, contentDescription = stringResource(R.string.parent_stats_title))
                     }
                     IconButton(onClick = onOpenInsulin) {
                         Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.parent_insulin_calendar_title))

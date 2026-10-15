@@ -25,6 +25,8 @@ import com.ingeint.checkin.ui.parent.ParentHomeScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsScreen
 import com.ingeint.checkin.ui.parent.ParentSettingsViewModel
 import com.ingeint.checkin.ui.parent.ParentViewModel
+import com.ingeint.checkin.ui.parent.StatsScreen
+import com.ingeint.checkin.ui.parent.StatsViewModel
 import com.ingeint.checkin.ui.permissions.PermissionsWizardScreen
 import com.ingeint.checkin.ui.setup.SetupScreen
 import com.ingeint.checkin.ui.setup.SetupViewModel
@@ -41,6 +43,7 @@ private object Routes {
     const val DIAGNOSTICS = "diagnostics/{role}"
     const val ABOUT = "about"
     const val INSULIN_CALENDAR = "insulin_calendar"
+    const val STATS = "stats"
 
     fun permissions(role: String, childName: String) = "permissions/$role/$childName"
 
@@ -118,7 +121,13 @@ private fun CheckinNavHost(navController: NavHostController, container: com.inge
                 viewModel,
                 onOpenSettings = { navController.navigate(Routes.parentSettings(childName)) },
                 onOpenInsulin = { navController.navigate(Routes.INSULIN_CALENDAR) },
+                onOpenStats = { navController.navigate(Routes.STATS) },
             )
+        }
+
+        composable(Routes.STATS) {
+            val viewModel: StatsViewModel = viewModel(factory = AppViewModelFactory(container) { StatsViewModel(it) })
+            StatsScreen(viewModel, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.INSULIN_CALENDAR) {
