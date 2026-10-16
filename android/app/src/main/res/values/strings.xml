@@ -113,6 +113,10 @@
     <string name="about_not_a_medical_device">No es un dispositivo médico ni reemplaza al sensor.</string>
     <string name="about_developed_by">Producto desarrollado por INGEINT C.A.</string>
 
+    <string name="parent_glucose_now_title">Glicemia ahora</string>
+    <string name="parent_glucose_now_none">Todavía no hay lecturas automáticas. Llegan cada 15 minutos si LibreLinkUp está conectado en Ajustes.</string>
+    <string name="parent_glucose_now_just_now">Hace menos de un minuto</string>
+    <string name="parent_glucose_now_ago">Hace %1$d min</string>
     <string name="parent_stats_title">Estadísticas</string>
     <string name="parent_stats_share_pdf">Compartir resumen en PDF</string>
     <string name="parent_stats_today">Hoy</string>
@@ -129,6 +133,8 @@
     <string name="parent_stats_cv">Variabilidad (CV)</string>
     <string name="parent_stats_coverage">Datos disponibles</string>
     <string name="parent_stats_footnote_continuous">Basado en %1$d lecturas automáticas del sensor (una cada 15 minutos).</string>
+    <string name="parent_stats_curve">Curva de glicemia</string>
+    <string name="parent_stats_curve_legend">Banda verde: rango %1$d–%2$d mg/dL · Línea naranja: dosis rápida · Punto verde: comida · Cuadro azul: Tresiba</string>
     <string name="parent_stats_by_hour">Promedio por hora del día</string>
     <string name="parent_stats_insulin">Insulina</string>
     <string name="parent_stats_daily_avg">Promedio diario</string>

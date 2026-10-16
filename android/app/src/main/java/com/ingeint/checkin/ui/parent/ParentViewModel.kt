@@ -20,6 +20,9 @@ data class ActiveSos(val eventId: String, val atMillis: Long, val lat: Double?, 
 /** Última respuesta a "¿Dónde está Cesar?" (`families.lastLocation`). */
 data class LastLocation(val lat: Double, val lng: Double, val atMillis: Long)
 
+/** Una lectura automática del sensor (`glucoseDays`), pedido 2026-10-16. */
+data class ReadingPoint(val atMillis: Long, val value: Int, val trend: Int?)
+
 data class TimelineEvent(
     val id: String,
     val type: String,
@@ -53,6 +56,9 @@ data class ParentUiState(
     val lastLocation: LastLocation? = null,
     val locationRequestedAtMillis: Long? = null,
     val doseLogged: Boolean = false,
+    val readings: List<ReadingPoint> = emptyList(),
+    val lowThreshold: Int = 70,
+    val highThreshold: Int = 180,
 )
 
 /**
@@ -67,6 +73,7 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
     private var familyListener: ListenerRegistration? = null
     private var eventsListener: ListenerRegistration? = null
     private var dayListener: ListenerRegistration? = null
+    private var readingsListener: ListenerRegistration? = null
 
     init {
         viewModelScope.launch { attachListeners() }
@@ -95,6 +102,8 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                         childName = snap.getString("childName") ?: "",
                         childPhone = settings?.get("childPhone") as? String,
                         remindersEnabled = settings?.get("enabled") as? Boolean ?: true,
+                        lowThreshold = (settings?.get("lowThreshold") as? Number)?.toInt() ?: 70,
+                        highThreshold = (settings?.get("highThreshold") as? Number)?.toInt() ?: 180,
                         lastLocation = lastLocation,
                         locationRequestedAtMillis =
                             _state.value.locationRequestedAtMillis?.takeIf {
@@ -140,6 +149,29 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
                             )
                         }
                     _state.value = _state.value.copy(timeline = events, activeSos = findActiveSos(events))
+                }
+
+        // Lecturas automáticas de ayer y hoy (cada 15 min); la tarjeta "Glicemia ahora" usa las últimas 24 h.
+        readingsListener =
+            familyRef.collection("glucoseDays")
+                .whereGreaterThanOrEqualTo(
+                    com.google.firebase.firestore.FieldPath.documentId(),
+                    java.time.LocalDate.now().minusDays(1).toString(),
+                )
+                .addSnapshotListener { snap, _ ->
+                    if (snap == null) return@addSnapshotListener
+                    val cutoff = System.currentTimeMillis() - 24 * 3600_000L
+                    val points =
+                        snap.documents.flatMap { doc ->
+                            @Suppress("UNCHECKED_CAST")
+                            val map = doc.get("readings") as? Map<String, Map<String, Any?>> ?: return@flatMap emptyList()
+                            map.mapNotNull { (sec, r) ->
+                                val at = sec.toLongOrNull()?.times(1000) ?: return@mapNotNull null
+                                val v = (r["v"] as? Number)?.toInt() ?: return@mapNotNull null
+                                if (at < cutoff) null else ReadingPoint(at, v, (r["tr"] as? Number)?.toInt())
+                            }
+                        }.sortedBy { it.atMillis }
+                    _state.value = _state.value.copy(readings = points)
                 }
 
         val today = java.time.LocalDate.now().toString()
@@ -250,5 +282,6 @@ class ParentViewModel(private val container: AppContainer) : ViewModel() {
         familyListener?.remove()
         eventsListener?.remove()
         dayListener?.remove()
+        readingsListener?.remove()
     }
 }

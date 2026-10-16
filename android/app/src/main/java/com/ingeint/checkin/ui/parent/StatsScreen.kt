@@ -163,6 +163,17 @@ private fun StatsContent(s: StatsResult, advice: AdvisorResult?) {
             style = MaterialTheme.typography.bodySmall,
         )
         Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.parent_stats_curve), style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(6.dp))
+        GlucoseChart(s)
+        AxisLabels(curveLabels(s))
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.parent_stats_curve_legend, s.lowThreshold, s.highThreshold),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(16.dp))
         Text(stringResource(R.string.parent_stats_by_hour), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(6.dp))
         HourChart(s)
@@ -371,6 +382,13 @@ private fun DayChart(s: StatsResult) {
     val step = if (s.days.size > 14) 5 else 1
     AxisLabels(s.days.mapIndexed { i, d -> if (i % step == 0) d.date.dayOfMonth.toString() else "" })
 }
+
+private fun curveLabels(s: StatsResult): List<String> =
+    if (s.periodDays == 1) {
+        (0 until 24).map { if (it % 6 == 0) it.toString() else "" }
+    } else {
+        s.days.mapIndexed { i, d -> if (i % (if (s.days.size > 14) 5 else 1) == 0) d.date.dayOfMonth.toString() else "" }
+    }
 
 @Composable
 private fun AxisLabels(labels: List<String>) {

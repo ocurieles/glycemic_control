@@ -42,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -97,6 +98,11 @@ fun ParentHomeScreen(viewModel: ParentViewModel, onOpenSettings: () -> Unit, onO
                     SosBanner(sos, state.childName, state.childPhone, onGoing = { viewModel.ackSos(sos.eventId) })
                     Spacer(Modifier.height(16.dp))
                 }
+            }
+
+            item {
+                GlucoseNowCard(state.readings, state.lowThreshold, state.highThreshold)
+                Spacer(Modifier.height(16.dp))
             }
 
             item {
@@ -207,6 +213,69 @@ private fun SosBanner(sos: ActiveSos, childName: String, childPhone: String?, on
                 }
             }
         }
+    }
+}
+
+/** Última lectura automática + mini curva de las últimas 6 h (pedido 2026-10-16). */
+@Composable
+private fun GlucoseNowCard(readings: List<ReadingPoint>, low: Int, high: Int) {
+    val now by produceState(System.currentTimeMillis()) {
+        while (true) {
+            delay(30_000)
+            value = System.currentTimeMillis()
+        }
+    }
+    Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.parent_glucose_now_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            val last = readings.lastOrNull()
+            if (last == null) {
+                Text(stringResource(R.string.parent_glucose_now_none), style = MaterialTheme.typography.bodyMedium)
+                return@Column
+            }
+            val color =
+                when {
+                    last.value < low -> Color(0xFFD03B3B)
+                    last.value > high -> Color(0xFFEC835A)
+                    else -> Color(0xFF0CA30C)
+                }
+            val minutes = ((now - last.atMillis) / 60_000).coerceAtLeast(0)
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("${last.value}", style = MaterialTheme.typography.displaySmall, color = color)
+                Text("mg/dL ${TREND_ARROWS[last.trend?.toLong()] ?: ""}", style = MaterialTheme.typography.titleMedium)
+            }
+            Text(
+                if (minutes < 1) stringResource(R.string.parent_glucose_now_just_now) else stringResource(R.string.parent_glucose_now_ago, minutes.toInt()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val recent = readings.filter { it.atMillis >= now - 6 * 3600_000L }
+            if (recent.size >= 2) {
+                Spacer(Modifier.height(12.dp))
+                Sparkline(recent, low, high, now)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Sparkline(points: List<ReadingPoint>, low: Int, high: Int, now: Long) {
+    val start = now - 6 * 3600_000L
+    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth().height(64.dp)) {
+        val maxV = maxOf(250, points.maxOf { it.value } + 10).toFloat()
+        val minV = minOf(60, points.minOf { it.value } - 10).toFloat()
+        fun px(t: Long) = ((t - start) / (6 * 3600_000f)).coerceIn(0f, 1f) * size.width
+        fun py(v: Int) = size.height - (v - minV) / (maxV - minV) * size.height
+        drawRect(Color(0xFF0CA30C).copy(alpha = 0.12f), androidx.compose.ui.geometry.Offset(0f, py(high)), androidx.compose.ui.geometry.Size(size.width, py(low) - py(high)))
+        val path = androidx.compose.ui.graphics.Path()
+        var prev: ReadingPoint? = null
+        points.forEach { p ->
+            if (prev == null || p.atMillis - prev!!.atMillis > 45 * 60_000L) path.moveTo(px(p.atMillis), py(p.value)) else path.lineTo(px(p.atMillis), py(p.value))
+            prev = p
+        }
+        drawPath(path, Color(0xFF05213E), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
+        points.last().let { drawCircle(Color(0xFF05213E), 4.dp.toPx(), androidx.compose.ui.geometry.Offset(px(it.atMillis), py(it.value))) }
     }
 }
 

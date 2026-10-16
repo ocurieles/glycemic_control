@@ -34,6 +34,8 @@ data class GlucoseStats(
     val veryHighPct: Double,
 )
 
+data class SeriesPoint(val atMillis: Long, val value: Int)
+
 data class HourPoint(val hour: Int, val mean: Int, val count: Int)
 
 data class DayInsulin(
@@ -62,6 +64,12 @@ data class StatsResult(
     val response: DoseResponse?,
     /** Lecturas automáticas (cada 15 min) usadas; 0 si solo hay lecturas puntuales. */
     val continuousReadings: Int,
+    val series: List<SeriesPoint>,
+    val periodStartMillis: Long,
+    val periodEndMillis: Long,
+    val doseTimes: List<Long>,
+    val mealTimes: List<Long>,
+    val basalTimes: List<Long>,
     val coveragePct: Int?,
     val totalMeals: Int,
     val avgDailyCarbs: Int,
@@ -149,6 +157,12 @@ object StatsCalculator {
             totalDoses = doses.size,
             response = doseResponse(inPeriod),
             continuousReadings = if (useContinuous) continuous.size else 0,
+            series = base.mapNotNull { e -> e.glucose?.let { SeriesPoint(e.atMillis, it) } },
+            periodStartMillis = startMillis,
+            periodEndMillis = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),
+            doseTimes = doses.map { it.atMillis },
+            mealTimes = meals.map { it.atMillis },
+            basalTimes = inPeriod.filter { it.type == "basal_dose" }.map { it.atMillis },
             coveragePct = coveragePct,
             totalMeals = meals.size,
             avgDailyCarbs = meals.sumOf { it.carbs ?: 0 } / mealDays,
