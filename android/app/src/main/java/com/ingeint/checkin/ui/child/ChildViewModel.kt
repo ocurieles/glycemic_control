@@ -60,6 +60,7 @@ data class ChildUiState(
     /** Dosis habitual del plan diario (Ajustes del padre), para preseleccionarla. */
     val basalUnits: Int? = null,
     val basalLogged: Boolean = false,
+    val messageSent: Boolean = false,
 )
 
 /**
@@ -161,6 +162,28 @@ class ChildViewModel(private val container: AppContainer) : ViewModel() {
             _state.value = _state.value.copy(doseLogged = true)
             delay(2_000)
             _state.value = _state.value.copy(doseLogged = false)
+        }
+    }
+
+    /** Mensaje del niño a sus padres (pedido 2026-10-20): Room primero, red después (regla 4). */
+    fun sendMessage(text: String) {
+        val clean = text.trim().take(120)
+        if (clean.isEmpty()) return
+        Haptics.vibrate(context, VibrationPattern.TAP)
+        viewModelScope.launch {
+            val clientAt = container.prefs.correctedNowMillis()
+            val offset = container.prefs.clockOffsetMs.first()
+            container.outboxRepository.record(
+                type = OutboxEventType.CHILD_MESSAGE,
+                clientAtMillis = clientAt,
+                clockOffsetMs = offset,
+                source = "app",
+                text = clean,
+            )
+            SyncWorker.enqueue(context)
+            _state.value = _state.value.copy(messageSent = true)
+            delay(2_000)
+            _state.value = _state.value.copy(messageSent = false)
         }
     }
 

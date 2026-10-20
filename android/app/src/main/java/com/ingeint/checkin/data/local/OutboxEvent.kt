@@ -23,6 +23,9 @@ enum class OutboxEventType {
     /** Comida con carbohidratos y Tresiba: solo los registra un padre (pedido 2026-10-15). */
     MEAL,
     BASAL_DOSE,
+
+    /** Mensaje escrito por el niño a sus padres (pedido 2026-10-20). */
+    CHILD_MESSAGE,
 }
 
 /**

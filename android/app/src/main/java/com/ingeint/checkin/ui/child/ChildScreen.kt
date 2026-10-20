@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,6 +57,7 @@ private val QUICK_LOG_DOSES = listOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
 fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
     val state by viewModel.state.collectAsState()
     var showQuickLog by remember { mutableStateOf(false) }
+    var showWrite by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -85,6 +88,13 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
                 )
             }
 
+            Spacer(Modifier.height(16.dp))
+            TextButton(onClick = { showWrite = true }) {
+                Text(
+                    if (state.messageSent) stringResource(R.string.child_write_sent) else stringResource(R.string.child_write_button),
+                )
+            }
+
             Spacer(Modifier.height(48.dp))
             HelpButton(onComplete = viewModel::onSos)
         }
@@ -107,6 +117,16 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
         }
     }
 
+    if (showWrite) {
+        WriteMessageDialog(
+            onSend = {
+                viewModel.sendMessage(it)
+                showWrite = false
+            },
+            onDismiss = { showWrite = false },
+        )
+    }
+
     if (showQuickLog) {
         QuickLogDialog(
             doseLogged = state.doseLogged || state.basalLogged,
@@ -116,6 +136,29 @@ fun ChildScreen(viewModel: ChildViewModel, onOpenDiagnostics: () -> Unit) {
             onDismiss = { showQuickLog = false },
         )
     }
+}
+
+@Composable
+private fun WriteMessageDialog(onSend: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.child_write_title)) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { if (it.length <= 120) text = it },
+                label = { Text(stringResource(R.string.child_write_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSend(text) }, enabled = text.isNotBlank()) { Text(stringResource(R.string.child_write_send)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.child_quick_log_cancel)) } },
+    )
 }
 
 @Composable

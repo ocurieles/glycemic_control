@@ -4,6 +4,7 @@ import {
   formatBasalDoseMessage,
   formatBasalMissingMessage,
   formatCheckinMessage,
+  formatChildMessage,
   formatInsulinDoseMessage,
   formatMealMessage,
   formatSosMessage,
@@ -114,5 +115,9 @@ describe("messages.ts — textos exactos de docs/04", () => {
     expect(meal.body).toBe("45 g de carbohidratos · 8:05 a. m. · 110 mg/dL → · arepa");
     expect(formatBasalDoseMessage("Papá", 20, at("21:00")).body).toBe("20 U · 9:00 p. m.");
     expect(formatBasalMissingMessage("Cesar", "21:00").body).toContain("Cesar");
+  });
+
+  it("mensaje del niño", () => {
+    expect(formatChildMessage("Cesar", "¿puedo ir a jugar?")).toEqual({ title: "Cesar escribió", body: "¿puedo ir a jugar?" });
   });
 });

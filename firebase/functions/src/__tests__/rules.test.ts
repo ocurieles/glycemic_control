@@ -229,6 +229,14 @@ describe("families/{fid}/events/{eid}", () => {
     await assertFails(asParent().doc(`families/${FAMILY_ID}/glucoseDays/2026-10-17`).set({ date: "2026-10-17" }));
   });
 
+  it("el niño puede escribir un mensaje (máx. 120) y un padre no puede usar ese tipo", async () => {
+    await seedFamily();
+    const base = { createdAt: serverTimestamp(), clientAt: Timestamp.now(), source: "app" };
+    await assertSucceeds(asChild().doc(`families/${FAMILY_ID}/events/cm1`).set({ ...base, type: "child_message", createdBy: CHILD_UID, text: "hola" }));
+    await assertFails(asChild().doc(`families/${FAMILY_ID}/events/cm2`).set({ ...base, type: "child_message", createdBy: CHILD_UID, text: "x".repeat(121) }));
+    await assertFails(asParent().doc(`families/${FAMILY_ID}/events/cm3`).set({ ...base, type: "child_message", createdBy: PARENT_UID, text: "hola" }));
+  });
+
   it("un padre puede guardar el plan de Tresiba y se valida", async () => {
     await seedFamily();
     await assertSucceeds(asParent().doc(`families/${FAMILY_ID}`).update({ basalPlan: { enabled: true, units: 20, time: "21:00" } }));

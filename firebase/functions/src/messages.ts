@@ -160,3 +160,8 @@ export function formatBasalMissingMessage(childName: string, planTime: string): 
     body: `Hoy todavía no se registró la Tresiba de ${childName} (prevista a las ${planTime}).`,
   };
 }
+
+/** Mensaje escrito por el niño en su app (pedido 2026-10-20). Lo ven los padres. */
+export function formatChildMessage(senderName: string, text: string): { title: string; body: string } {
+  return { title: `${senderName} escribió`, body: text };
+}

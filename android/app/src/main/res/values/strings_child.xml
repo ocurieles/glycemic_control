@@ -24,6 +24,11 @@
     <string name="child_quick_log_title">Registro rápido</string>
     <string name="child_quick_log_done">Registrado ✓</string>
     <string name="child_quick_log_cancel">Cerrar</string>
+    <string name="child_write_button">Escribir a mis papás</string>
+    <string name="child_write_title">Escribir a mis papás</string>
+    <string name="child_write_hint">Tu mensaje</string>
+    <string name="child_write_send">Enviar</string>
+    <string name="child_write_sent">Enviado ✓</string>
     <string name="child_basal_title">Dosis diaria</string>
     <string name="child_basal_save">Registrar dosis diaria</string>
     <string name="child_basal_confirm">¿Registrar %1$d U de la dosis diaria?</string>

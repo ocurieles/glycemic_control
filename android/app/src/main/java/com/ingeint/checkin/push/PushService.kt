@@ -166,7 +166,7 @@ class PushService : FirebaseMessagingService() {
                         data["title"].orEmpty(),
                         data["body"].orEmpty(),
                     )
-                "insulin_dose", "meal", "basal_dose" ->
+                "insulin_dose", "meal", "basal_dose", "child_message" ->
                     ParentNotifier.notifyCheckin(
                         this@PushService,
                         data["eventId"].orEmpty(),

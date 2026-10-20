@@ -8,6 +8,7 @@ import { sendToChild, sendToParents } from "./messaging";
 import { addInsulinDose } from "./insulin";
 import {
   formatBasalDoseMessage,
+  formatChildMessage,
   formatCheckinMessage,
   formatInsulinDoseMessage,
   formatMealMessage,
@@ -127,6 +128,13 @@ export const onEventCreated = onDocumentCreated({ document: "families/{familyId}
       // Si lo registró un padre, no hace falta avisarle a sí mismo — solo al otro padre.
       await sendToParents(familyId, "insulin_dose", { title, body, eventId }, data.createdBy as string);
       logger.info("insulin_dose procesado", { familyId, eventId, dateKey, doseUnits, glucoseError });
+      break;
+    }
+    case "child_message": {
+      await snap.ref.update(baseUpdate);
+      const { title, body } = formatChildMessage(senderName, ((data.text as string) ?? "").trim());
+      await sendToParents(familyId, "child_message", { title, body, eventId });
+      logger.info("child_message procesado", { familyId, eventId });
       break;
     }
     case "meal": {

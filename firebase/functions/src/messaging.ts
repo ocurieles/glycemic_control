@@ -33,6 +33,7 @@ export const PUSH_TTL_SECONDS = {
   nudge: 300,
   sync: 3600,
   location_request: 120,
+  child_message: 3600,
   meal: 3600,
   basal_dose: 3600,
   basal_missing: 21600,

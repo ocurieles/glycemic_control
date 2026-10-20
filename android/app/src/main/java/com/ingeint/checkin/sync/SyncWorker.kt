@@ -281,4 +281,5 @@ private fun OutboxEventType.toContractName(): String =
         OutboxEventType.LOCATION_RESPONSE -> "location_response"
         OutboxEventType.MEAL -> "meal"
         OutboxEventType.BASAL_DOSE -> "basal_dose"
+        OutboxEventType.CHILD_MESSAGE -> "child_message"
     }

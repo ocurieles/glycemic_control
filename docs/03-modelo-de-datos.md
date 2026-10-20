@@ -119,7 +119,7 @@ El `eventId` es un **UUID v4 generado por el cliente**.
 
 | Campo | Escribe | Notas |
 |---|---|---|
-| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response`, `basal_dose` (niño); `parent_message`, `sos_ack`, `location_request`, `insulin_dose`, `meal`, `basal_dose` (padre) |
+| `type` | cliente | `checkin`, `sos`, `insulin_dose`, `location_response`, `basal_dose`, `child_message` (niño); `parent_message`, `sos_ack`, `location_request`, `insulin_dose`, `meal`, `basal_dose` (padre) |
 | `createdBy` | cliente | = `request.auth.uid` |
 | `createdAt` | cliente | `serverTimestamp()`; las reglas exigen `== request.time` |
 | `clientAt` | cliente | Timestamp del momento real del toque, **ya corregido** con `clockOffsetMs` |

@@ -405,6 +405,7 @@ private fun TimelineRow(event: TimelineEvent) {
             "parent_message" -> stringResource(R.string.parent_event_parent_message)
             "sos_ack" -> stringResource(R.string.parent_event_sos_ack)
             "insulin_dose" -> stringResource(R.string.parent_event_insulin_dose)
+            "child_message" -> stringResource(R.string.parent_event_child_message)
             "meal" -> stringResource(R.string.parent_event_meal)
             "basal_dose" -> stringResource(R.string.parent_event_basal)
             "location_request", "location_response" -> stringResource(R.string.parent_event_location)

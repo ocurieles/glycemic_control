@@ -161,6 +161,7 @@
     <string name="parent_log_confirm_basal">%1$d U de Tresiba · %2$s</string>
     <string name="parent_log_confirm">Confirmar</string>
     <string name="parent_log_correct">Corregir</string>
+    <string name="parent_event_child_message">Mensaje recibido</string>
     <string name="parent_event_meal">Comida</string>
     <string name="parent_event_basal">Tresiba</string>
     <string name="parent_settings_basal_title">Tresiba (insulina basal)</string>

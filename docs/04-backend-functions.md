@@ -57,6 +57,7 @@ La **hora real** del evento es `realAt = min(clientAt, createdAt)` (el cliente y
 | `insulin_dose` | Lo puede crear el niño **o un padre** (pedido 2026-09-29, mismo botón/valores que ya tiene el niño, un toque). Consulta la glicemia actual (igual que `checkin`, `glucose`/`glucoseError` en el evento), la guarda junto a la dosis en `days/{fecha}.insulin.doses[].glucoseMgDl/glucoseTrend`, y manda push `insulin_dose` a los **otros** padres (si lo registró un padre, no se avisa a sí mismo) con `{ title, body, eventId }` — el título usa `senderName` (el niño o el padre que la registró), y el body incluye valor y tendencia si hay. No toca cumplimiento. |
 | `parent_message` | Push al niño `parent_message` con `{ text, senderName }`. |
 | `sos_ack` | Push al niño `sos_ack` con `{ senderName, text }` y push a los **otros** padres `sos_ack_info` ("Mamá respondió: Voy en camino"). |
+| `child_message` | Mensaje escrito por el niño (`text`, máx. 120). Avisa a **todos** los padres (`child_message`: "Cesar escribió" / el texto) y aparece en la línea de tiempo del padre. |
 | `meal` | Consulta la glicemia como en `checkin` (`glucose`/`glucoseError`) y avisa a los **otros** padres (`meal`): "Mamá registró una comida · 45 g de carbohidratos · 8:05 a. m. · 110 mg/dL →". |
 | `basal_dose` | Tresiba: marca el día en `meta/basal.doneDates` y avisa a los otros padres (`basal_dose`). |
 | `location_request` | Push silencioso al niño `location_request` con `{ eventId }` — sin vibración ni notificación (docs/06, discreción). |
