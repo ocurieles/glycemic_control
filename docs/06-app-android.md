@@ -43,6 +43,7 @@ fun vibrate(context: Context, pattern: LongArray) {
 | `child_message` | niño | HIGH | ninguno | vibración manual |
 | `sync_status` | ambos | LOW | ninguno | "Sincronizando…"; foreground info de WorkManager (texto neutro) |
 | `parent_checkin` | padres | DEFAULT | default | |
+| `parent_message` | padres | HIGH | default | mensajes del niño: salen como notificación emergente (pedido 2026-10-21) |
 | `parent_alert` | padres | HIGH | default | sin respuesta, fuera de rango |
 | `parent_sos` | padres | HIGH | alarma (`USAGE_ALARM`) | `setBypassDnd(true)`, vibración larga, pantalla completa |
 

@@ -29,6 +29,27 @@ object ParentNotifier {
         context.getSystemService<NotificationManager>()?.notify(eventId.hashCode(), notification)
     }
 
+    /**
+     * Mensaje escrito por el niño: emergente (canal de importancia alta) y con el texto
+     * completo visible. Se asegura el canal justo antes de avisar: si el push llega con la
+     * app cerrada, `CheckinApp` aún podría no haberlo creado y Android descartaría el aviso.
+     */
+    fun notifyMessage(context: Context, eventId: String, title: String, body: String) {
+        Channels.createForRole(context, "parent")
+        val notification =
+            NotificationCompat.Builder(context, ChannelIds.PARENT_MESSAGE)
+                .setSmallIcon(android.R.drawable.ic_dialog_email)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .setContentIntent(openAppPendingIntent(context, eventId.hashCode()))
+                .build()
+        context.getSystemService<NotificationManager>()?.notify(eventId.hashCode(), notification)
+    }
+
     fun notifyAlert(context: Context, id: String, title: String, body: String) {
         val notification =
             NotificationCompat.Builder(context, ChannelIds.PARENT_ALERT)

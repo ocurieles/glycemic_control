@@ -12,6 +12,7 @@ object ChannelIds {
     const val CHILD_MESSAGE = "child_message"
     const val SYNC_STATUS = "sync_status"
     const val PARENT_CHECKIN = "parent_checkin"
+    const val PARENT_MESSAGE = "parent_message"
     const val PARENT_ALERT = "parent_alert"
     const val PARENT_SOS = "parent_sos"
 }
@@ -33,6 +34,7 @@ object Channels {
                     }
                     "parent" -> {
                         add(parentCheckin())
+                        add(parentMessage())
                         add(parentAlert())
                         add(parentSos(context))
                     }
@@ -50,6 +52,7 @@ object Channels {
             ChannelIds.CHILD_MESSAGE,
             ChannelIds.SYNC_STATUS,
             ChannelIds.PARENT_CHECKIN,
+            ChannelIds.PARENT_MESSAGE,
             ChannelIds.PARENT_ALERT,
             ChannelIds.PARENT_SOS,
         ).forEach(manager::deleteNotificationChannel)
@@ -77,6 +80,10 @@ object Channels {
 
     private fun parentCheckin() =
         NotificationChannel(ChannelIds.PARENT_CHECKIN, "Revisiones", NotificationManager.IMPORTANCE_DEFAULT)
+
+    /** Mensajes del niño a sus padres (pedido 2026-10-21): importancia alta para que salgan emergentes. */
+    private fun parentMessage() =
+        NotificationChannel(ChannelIds.PARENT_MESSAGE, "Mensajes de Cesar", NotificationManager.IMPORTANCE_HIGH)
 
     private fun parentAlert() =
         NotificationChannel(ChannelIds.PARENT_ALERT, "Alertas", NotificationManager.IMPORTANCE_HIGH)
